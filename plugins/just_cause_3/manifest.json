@@ -1,0 +1,38 @@
+{
+  "id": "just_cause_3",
+  "name": "正当防卫3 (Just Cause 3)",
+  "process": "JustCause3.exe",
+  "engine": "memory",
+  "version": "1.0.0",
+  "engine_min": "1.0.0",
+  "author": "Flypigs (功能参考风灵月影)",
+  "launch": "",
+  "game": "JC3",
+  "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，共 17 项。",
+  "groups": [
+    "角色",
+    "武器",
+    "载具",
+    "抓钩装备",
+    "游戏系统"
+  ],
+  "features": [
+    { "id": "infinite_health", "name": "无限生命", "type": "checkbox", "fn_kind": "checkbox", "group": "角色" },
+    { "id": "infinite_oxygen", "name": "无限氧气", "type": "checkbox", "fn_kind": "checkbox", "group": "角色" },
+    { "id": "one_hit_kills", "name": "一击必杀", "type": "checkbox", "fn_kind": "checkbox", "group": "角色" },
+    { "id": "easy_clear_heat", "name": "快速清除热度", "type": "button", "fn_kind": "button", "group": "角色" },
+    { "id": "infinite_ammo", "name": "无限弹药", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "no_reload", "name": "无需换弹", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "infinite_grenades", "name": "无限手雷", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "super_accuracy", "name": "超级精准", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "no_recoil", "name": "无后坐力", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "rapid_fire", "name": "快速射击", "type": "checkbox", "fn_kind": "checkbox", "group": "武器" },
+    { "id": "infinite_vehicle_health", "name": "无限载具生命", "type": "checkbox", "fn_kind": "checkbox", "group": "载具" },
+    { "id": "infinite_tethers", "name": "无限抓钩", "type": "checkbox", "fn_kind": "checkbox", "group": "抓钩装备" },
+    { "id": "unlock_all_gear_mods", "name": "解锁所有装备改装", "type": "button", "fn_kind": "button", "group": "抓钩装备" },
+    { "id": "set_game_speed", "name": "设置游戏速度", "type": "slider", "fn_kind": "slider", "group": "游戏系统" },
+    { "id": "freeze_mission_timer", "name": "冻结任务计时器", "type": "checkbox", "fn_kind": "checkbox", "group": "游戏系统" },
+    { "id": "freeze_challenge_timer", "name": "冻结挑战计时器", "type": "checkbox", "fn_kind": "checkbox", "group": "游戏系统" },
+    { "id": "add_10k_challenge_score", "name": "增加10K挑战分数", "type": "button", "fn_kind": "button", "group": "游戏系统" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "just_cause_3",
+  "name": "正当防卫3",
+  "short_name": "JC3",
+  "developer": "Avalanche Studios",
+  "publisher": "Square Enix",
+  "release_year": 2015,
+  "platform": "Windows",
+  "process": ["JustCause3.exe"],
+  "genre": ["action", "open_world", "adventure"],
+  "support": {
+    "windows": true,
+    "x86": false,
+    "x64": true
+  },
+  "launch": {
+    "exe": "JustCause3.exe",
+    "args": ""
+  },
+  "theme": {
+    "primary": "#E63946",
+    "accent": "#F4A261"
+  },
+  "assets": {
+    "cover": "assets/cover.jpg",
+    "banner": "assets/banner.jpg",
+    "icon": "assets/icon.png"
+  }
+}

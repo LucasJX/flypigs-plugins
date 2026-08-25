@@ -157,8 +157,12 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             fkind = ft.get("fn_kind") or ft.get("type")
             if fkind not in VALID_FN_KIND:
                 res.add_warning(where, f"feature {fid!r} fn_kind={fkind!r} 不在 {sorted(VALID_FN_KIND)}")
-            if fkind != "button" and not ft.get("fn_label"):
-                res.add_error(where, f"feature {fid!r} (kind={fkind}) 缺 fn_label")
+            # fn_label 只在「注入式引擎」(如 ra2_pipe) 必需；纯数据引擎 (memory 等) 不需要
+            # 判定：manifest.engine 以 *_pipe 结尾（含 ra2_pipe / pipe_x / ...）一律视为注入式
+            engine = mf.get("engine", "") or ""
+            is_pipe_engine = engine.endswith("_pipe")
+            if is_pipe_engine and fkind != "button" and not ft.get("fn_label"):
+                res.add_error(where, f"feature {fid!r} (kind={fkind}, engine={engine}) 缺 fn_label — 注入式引擎必需")
             # group 命中检查留给 memory.mods（manifest.features 是 UI 描述，不要求 group）
 
     # --- memory.json（可选） ---
