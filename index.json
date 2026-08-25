@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-25T22:42:00Z",
+  "updated_at": "2026-08-25T23:00:00Z",
   "market_base": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
   "plugins": [
     {
@@ -10,13 +10,13 @@
       "process": "gamemd.exe",
       "engine": "ra2_pipe",
       "engine_min": "1.0.0",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": "Flypigs",
       "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，共 32 项。",
       "icon": null,
-      "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/ra2_yr/ra2_yr-1.1.0.zip",
-      "sha256": "492101056dc3fffaf2ccc95a194360148eee26c1193055c6255e39174d136897",
-      "size": 3905,
+      "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/ra2_yr/ra2_yr-1.1.1.zip",
+      "sha256": "4e94fd833a0e9fa688983ec51f6c67a3ee6767cb88296601d9e4352d42570056",
+      "size": 72061,
       "min_app": "1.0.0",
       "groups": [
         "经济",
@@ -28,7 +28,7 @@
         "阵营保护"
       ],
       "features_count": 32,
-      "updated_at": "2026-08-25T22:30:00Z"
+      "updated_at": "2026-08-25T23:00:00Z"
     },
     {
       "id": "just_cause_3",
