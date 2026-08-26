@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-08-26T10:35:00Z",
+  "updated_at": "2026-08-26T11:55:00Z",
   "market_base": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
   "plugins": [
     {
@@ -15,8 +15,8 @@
       "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，共 32 项。",
       "icon": null,
       "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/ra2_yr/ra2_yr-1.1.1.zip",
-      "sha256": "2db254340605193c7fb88009afcfdb26ae64d894a7e91ace8a844f64c040c014",
-      "size": 7987,
+      "sha256": "34ed83b94ffa0023b2eff4c8425d9472f4802881c84ee4d13e33d7e9cbbf2af0",
+      "size": 3920,
       "min_app": "1.0.0",
       "groups": [
         "经济",
@@ -28,7 +28,8 @@
         "阵营保护"
       ],
       "features_count": 32,
-      "updated_at": "2026-08-26T09:58:00Z"
+      "updated_at": "2026-08-26T11:55:00Z",
+      "sgdb_game_id": 38629
     },
     {
       "id": "just_cause_3",
@@ -42,8 +43,8 @@
       "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，共 17 项。",
       "icon": null,
       "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.0.2.zip",
-      "sha256": "d3e5be54772a0f832f507b550687ab3c4eccb6684f8a09e75d295e9f6c43c7f0",
-      "size": 7072,
+      "sha256": "a17d9698dfcc288213978e82792e69d27fbac063db5f60f1b4646c96c67d01fa",
+      "size": 2572,
       "min_app": "1.0.0",
       "groups": [
         "角色",
@@ -53,7 +54,8 @@
         "游戏系统"
       ],
       "features_count": 17,
-      "updated_at": "2026-08-26T10:35:00Z"
+      "updated_at": "2026-08-26T11:55:00Z",
+      "sgdb_game_id": 2403
     }
   ]
 }

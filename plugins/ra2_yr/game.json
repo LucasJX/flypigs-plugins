@@ -6,8 +6,14 @@
   "publisher": "Electronic Arts",
   "release_year": 2001,
   "platform": "Windows",
-  "process": ["gamemd.exe", "ra2md.exe"],
-  "genre": ["strategy", "rts"],
+  "process": [
+    "gamemd.exe",
+    "ra2md.exe"
+  ],
+  "genre": [
+    "strategy",
+    "rts"
+  ],
   "support": {
     "windows": true,
     "x86": true,
@@ -25,5 +31,6 @@
     "cover": "assets/cover.jpg",
     "banner": "assets/banner.jpg",
     "icon": "assets/icon.png"
-  }
+  },
+  "sgdb_game_id": 38629
 }
