@@ -239,6 +239,24 @@
       "on": "enable",
       "group": "游戏系统",
       "hotkey": ""
+    },
+    {
+      "_demo": true,
+      "_note": "v2.7 AutoAssembler 示例：演示 type=code_patch 的 schema 与流程；aob/patch_bytes 待真实验证后填。运行时如果 AOB 找不到，UI 会返回 'AOB not found'，不影响其他 mod。",
+      "id": "demo_no_clip_patch",
+      "name": "[DEMO] 穿墙代码补丁",
+      "type": "code_patch",
+      "module": "JustCause3.exe",
+      "aob": "",
+      "patch_offset": 0,
+      "patch_bytes": "90 90 90",
+      "pointer_path": [],
+      "value_type": "byte",
+      "frozen": false,
+      "target_value": 0,
+      "on": "enable",
+      "group": "游戏系统",
+      "hotkey": ""
     }
   ]
 }
