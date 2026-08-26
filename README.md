@@ -260,7 +260,22 @@ flypigs-plugins/
     { "id": "god", "name": "上帝模式", "group": "战斗增益", "module": "gamemd.exe",
       "aob": "8B 86 ?? ?? ?? ?? 85 C0 74", "base_offset": 0, "value_type": "byte",
       "frozen": true, "target_value": 1, "fn_label": "God", "fn_kind": "checkbox" },
-    { "id": "input_money", "name": "加钱", "group": "经济", ..., "min_value": 0, "max_value": 9999999 }
+    { "id": "input_money", "name": "加钱", "group": "经济", ..., "min_value": 0, "max_value": 9999999 },
+
+    // v2.7 AutoAssembler：type=code_patch（AOB + 字节替换，禁用时还原）
+    { "id": "demo_no_clip", "name": "穿墙", "type": "code_patch", "group": "游戏系统",
+      "module": "JustCause3.exe",
+      "aob": "48 8B ?? ?? ?? ?? ?? 48 85 ?? 74",
+      "patch_offset": 5,
+      "patch_bytes": "90 90",
+      "value_type": "byte", "frozen": false, "target_value": 0 },
+
+    // v2.7 AutoAssembler：type=code_inject（AOB + VirtualAllocEx + jmp hook）
+    { "id": "demo_one_hit_kill_inject", "name": "一击必杀 (hook)", "type": "code_inject",
+      "group": "战斗增益", "module": "JustCause3.exe",
+      "aob": "48 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85",
+      "hook_size": 5,
+      "asm_code": "48 C7 44 24 ?? 00 00 00 00 C3"   /* 伪例：mov [rsp+...],0; ret */ }
   ]
 }
 ```
@@ -269,17 +284,37 @@ flypigs-plugins/
 |------|------|------|------|
 | `mods[].id` | string | ✅ | 在本插件内唯一 |
 | `mods[].name` | string | ✅ | 显示名 |
+| `mods[].type` | string |  | **`value`(缺省) / `code_patch` / `code_inject`**（v2.7 字段，决定运行时路径） |
 | `mods[].group` | string | ✅ | **必须命中 `manifest.groups` 中一项**（铁律 #1 + #3） |
 | `mods[].module` | string |  | 主模块名（通常 = `process`） |
-| `mods[].aob` | string |  | AOB 扫描特征（hex 字符串，`?` 通配） |
+| `mods[].aob` | string |  | AOB 扫描特征（hex 字符串，`?` 通配）。type=code_inject **必填**（命中点 = hook 位置） |
 | `mods[].base_offset` | int |  | 基址偏移 |
 | `mods[].pointer_path` | int[] |  | 多级指针链（一般 `[]` 或 `[base_offset]`） |
 | `mods[].value_type` | string |  | `int32`/`int64`/`float`/`double`/`byte` |
-| `mods[].frozen` | bool |  | 写入后是否周期性 re-write |
+| `mods[].frozen` | bool |  | 写入后是否周期性 re-write（type=code_patch / code_inject 无需冻结） |
 | `mods[].target_value` | any |  | 启用时一次性写入的值 |
 | `mods[].fn_label` | string |  | 注入式引擎（`ra2_pipe`）的执行标签 |
 | `mods[].fn_kind` | string |  | 引擎调用方式（`checkbox`/`button`/`slider`/`input`） |
 | `mods[].min_value` / `mods[].max_value` | int |  | slider/input 类型的范围 |
+| `mods[].patch_offset` | int | type=code_patch | AOB 命中后从偏移起替换（缺省 0） |
+| `mods[].patch_bytes` | string | type=code_patch ✅ | 替换字节 hex；禁用时自动还原 |
+| `mods[].hook_size` | int | type=code_inject | 在 AOB 命中位置覆盖的 jmp 指令字节大小（x86/x64 默认 5） |
+| `mods[].asm_code` | string | type=code_inject ✅ | 注入到远端 shellcode 的 x86/x64 机器码 hex |
+| `mods[].calling_conv` | string |  | 调用约定（`cdecl`/`stdcall`/`thiscall`/`fastcall`），v2.8+ 实现 |
+
+### v2.7 三种 mod type 的语义与区别
+
+| type | 运行时做了什么 | 禁用时做了什么 | 适用场景 |
+|------|------|------|------|
+| `value`（缺省） | AOB 命中 + 沿 pointer_path 解析 → 写入数值 | 从 active 移除（不主动还原内存） | 数值读写：血量/弹药/钱 |
+| `code_patch` | AOB 命中 + 写入 patch_bytes | **自动写回原字节**（备份在 MemoryEngine._patches） | NOP 类简单补丁：跳过伤害判定、跳过冷却 |
+| `code_inject` | VirtualAllocEx 分配远端 shellcode → asm_code + jmp_back → 写入 jmp hook 覆盖 5 字节 | **写回原字节 + VirtualFree shellcode** | 复杂 hook：拦截伤害、修改资源数、强制调速度 |
+
+**约束**：
+- type=code_patch：patch_offset + patch_bytes 必填，patch_bytes 必须是合法 hex
+- type=code_inject：aob + hook_size + asm_code 必填，hook_size ∈ [5..32]（x86/x64 默认 5；ARM64 走其他路径）
+- 两种类型都不支持 ModSet（slider/input），只能是 Enable/Disable 的开/关
+- **AOB 必须来自真实游戏调试**，禁止 AI 编造——插件作者自负其责
 
 ### `game.json`（强烈推荐）
 
