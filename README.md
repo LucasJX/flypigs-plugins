@@ -80,6 +80,11 @@ python scripts/plugins-validate.py --root .
 | 16 | zip 内 `manifest.json` 与仓根 `manifest.json` **字节一致** | ERROR |
 | 17 | zip 内无 `.bak` / `_v2.` / `.tmp` / `~$` 等残留 | WARN |
 | 18 | `plugins/<id>/` 与 `index.json.plugins[]` 一一对应（无孤儿目录、无悬空条目） | ERROR |
+| 19 | `mods[].type` ∈ `{value, code_patch, code_inject}`（v2.7 AutoAssembler） | WARN |
+| 20 | `type=code_patch`：`patch_bytes` 必填且是合法 hex | ERROR |
+| 21 | `type=code_inject`：`aob` + `asm_code` + `hook_size∈[5..32]` 必填 | ERROR |
+| 22 | `game.json.sgdb_game_id` 是正整数（v2.8 海报自动拉取；缺失只 WARN） | WARN |
+| 23 | `index.json.plugins[i].sgdb_game_id` 与 `game.json.sgdb_game_id` 一致 | WARN |
 
 退出码：`0` = 全过；`1` = 有 error；`2` = 仅 warning（`--strict` 下变 `1`）。
 
@@ -209,6 +214,9 @@ flypigs-plugins/
 | `plugins[].groups` | string[] | ✅ | **有序分组数组**（铁律 #1） |
 | `plugins[].features_count` | int |  | 修改项数量（应等于 `memory.mods.length` 或 `manifest.features.length`） |
 | `plugins[].updated_at` | ISO8601 |  | 本条目最近发布/更新时刻 |
+| `plugins[].sgdb_game_id` | int |  | **[SteamGridDB game_id](https://www.steamgriddb.com/)**：PC 端首次安装时自动拉真海报（v2.8+）。**新插件强烈建议填** —— 不填也能跑，PC 端会回退到程序生成的双色占位 PNG |
+
+### `manifest.json`
 
 ### `manifest.json`
 
@@ -350,12 +358,13 @@ flypigs-plugins/
 | `launch.{exe,args}` | string |  | 启动配置 |
 | `theme.{primary,accent}` | hex |  | 主题色（PC 端 header 渲染用） |
 | `assets.{cover,banner,icon}` | path |  | 仓根 `plugins/<id>/` 下的相对路径 |
+| `sgdb_game_id` | int |  | **[SteamGridDB game_id](https://www.steamgriddb.com/)** —— 与 `index.json.plugins[].sgdb_game_id` 字段同时存在，PC 端 v2.8+ 首次安装时自动拉真海报替换 `assets/icon.png`。**新插件强烈建议填**：用 https://www.steamgriddb.com/api/v2/search/autocomplete/<游戏名> 查询 gameId。详见 §"v2.8 海报自动拉取 SOP" |
 
 ---
 
 ## ✅ PR 评审 checklist
 
-新插件 / 改插件的 PR，**最少**过这 7 关才合并：
+新插件 / 改插件的 PR，**最少**过这 8 关才合并：
 
 1. [ ] `python scripts/plugins-validate.py --strict` 退出码 = 0
 2. [ ] `manifest.groups` 顺序合理（按用户心智模型，不是字母序）
@@ -364,6 +373,7 @@ flypigs-plugins/
 5. [ ] `index.json.plugins[i]` 字段齐全，`sha256 / size / updated_at` 已更新
 6. [ ] zip 内 `manifest.json` 与仓根 `manifest.json` 字节一致（validate 已卡）
 7. [ ] 如果加了 `game.json`：文件可以被客户端单独读取（即使 zip 内不含也能 work）
+8. [ ] **如果游戏在 SteamGridDB 上找得到**：填了 `sgdb_game_id`（按 §v2.8 SOP 步骤），**没把 `assets/icon.png` 打进 zip**
 
 ---
 
@@ -388,6 +398,54 @@ flypigs-plugins/
 | 游戏封面 | `game.json.assets.icon` 拉 `plugins/<id>/assets/icon.png`，加载失败回退 🎮 emoji | n/a（手机端不渲染封面） |
 
 > **两端共用同一份 `index.json` 与同一套 `manifest.groups` 规则**——任何插件扩展都不需要改两端代码（铁律 #1）。
+
+---
+
+## 🛠 v2.8 海报自动拉取 SOP（新插件必读）
+
+> **目标**：插件作者**不需要打包 icon.png**，PC 端首次安装时自动从 SteamGridDB 拉正版游戏海报（600×900 → 落本地 `plugins/<id>/assets/icon.png`）。**所有新插件都按这个 SOP**。
+
+### 步骤
+
+1. **打开 https://www.steamgriddb.com/** 搜你的游戏名（用 Steam 官方名最佳，比如 `Command & Conquer: Red Alert 2 - Yuri's Revenge` 或 `Just Cause 3`）
+2. **查 SGDB game_id**：
+   ```bash
+   curl -H "Authorization: Bearer YOUR_SGDB_KEY" \
+     'https://www.steamgriddb.com/api/v2/search/autocomplete/<urlencoded-name>'
+   ```
+   取返回 `data[].id`（选 `verified: true`、同名最相似的）
+3. **填进 `game.json` 和 `index.json.plugins[]`**：
+   ```json
+   // plugins/<id>/game.json
+   { ..., "sgdb_game_id": 38629 }
+
+   // index.json
+   { "id": "<id>", ..., "sgdb_game_id": 38629 }
+   ```
+4. **不要打包 `assets/icon.png`** —— PC 端拉取后自动落到本地
+5. **提交** → CI 会跑 `plugins-validate.py --strict`
+6. 用户装机 → PC 端自动从 SGDB 拉取 → 显示真海报
+
+### 已配置 sgdb_game_id 的示例插件
+
+| 插件 | sgdb_game_id | 游戏官方名 |
+|---|---|---|
+| `ra2_yr` | 38629 | Command & Conquer: Red Alert 2 - Yuri's Revenge |
+| `just_cause_3` | 2403 | Just Cause 3 |
+
+### 故障排查
+
+- **没拉到**：检查 `~/.flypigs/sgdb.key` 是否存在 + 启用了 SGDB key。日志中心会输出 `[SGDB] xxx 失败` 信息。
+- **拉到了不喜欢的图**：在 PR 里改 `index.json.plugins[].sgdb_game_id` 到同游戏的另一个 SGDB id，或在 `game.json` 里手动指定 `assets.icon` 为本地路径绕过自动拉。
+- **SGDB 没收录你的游戏**：退路是 `game.json.assets.icon` 指向仓内本地 PNG，PC 端不会自动拉。
+
+### 客户端 SGDB key 管理（铁律）
+
+- key **绝不入源码不入聊天**，用户自行配置到 `~/.flypigs/sgdb.key` 或环境变量 `FLYPIGDB_KEY`
+- 客户端**有内置默认 key**（开发者提供），但推荐用户自备避免共享配额
+- 详见主仓 README「§核心决策 #11 SGDB 自动拉真海报」
+
+---
 
 ---
 

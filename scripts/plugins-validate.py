@@ -263,6 +263,13 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             elif not (isinstance(proc_raw, str) or (isinstance(proc_raw, list) and all(isinstance(x, str) for x in proc_raw))):
                 res.add_error(where, "game.json.process 必须是 string 或 string 数组")
 
+            # v2.8: sgdb_game_id 是强烈建议字段（v2.8+），缺了 warning 提醒（不阻塞 PR）
+            sgdb_id = game.get("sgdb_game_id")
+            if not isinstance(sgdb_id, int) or sgdb_id <= 0:
+                res.add_warning(where,
+                    "game.json.sgdb_game_id 缺失或非正整数 — PC 端不会自动拉真海报，"
+                    "会回退到双色占位 PNG。建议填 SteamGridDB game_id（v2.8+ SOP）")
+
     # --- zip 包 ---
     index_entry = index_entries.get(pid)
     if index_entry is None:
