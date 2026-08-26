@@ -98,6 +98,19 @@ def _check_safe_zip_member(name: str, where: str, res: Result) -> None:
             res.add_error(where, f"zip 内路径含控制字符，禁止: {name!r}")
 
 
+def _parse_hex_bytes_check(hex_str: str) -> bool:
+    """校验 hex 字符串合法（允许空格分隔）。与 MemoryEngine.ParseHexBytes 行为一致。"""
+    if not hex_str: return False
+    clean = hex_str.replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+    if not clean or len(clean) % 2 != 0:
+        return False
+    try:
+        bytes.fromhex(clean)
+        return True
+    except ValueError:
+        return False
+
+
 def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
     """校验单个 plugins/<id>/ 目录（含 index.json 对齐项）"""
     pid = plugin_dir.name
@@ -199,6 +212,37 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             res.add_error(where,
                 f"{len(ungrouped)} 条 memory.mods 未命中 manifest.groups（归组铁律！客户端会归 '其他' 兜底组）："
                 + ", ".join(ungrouped[:5]) + ("..." if len(ungrouped) > 5 else ""))
+
+    # v2.7 AutoAssembler：memory.mods[].type 分发 + 字段必填校验
+    if mods_list:
+        for m in mods_list:
+            if not isinstance(m, dict): continue
+            mid = m.get("id", "?")
+            mt = (m.get("type", "value") or "value").lower()
+            if mt not in ("value", "code_patch", "code_inject"):
+                res.add_error(where, f"mod {mid!r} type={m.get('type')!r} 必须 ∈ value/code_patch/code_inject")
+                continue
+            if mt == "code_patch":
+                if not m.get("patch_bytes"):
+                    res.add_error(where, f"mod {mid!r} type=code_patch 缺 patch_bytes（hex 字符串）")
+                elif _parse_hex_bytes_check(m["patch_bytes"]) is not True:
+                    res.add_error(where, f"mod {mid!r} patch_bytes 不是合法 hex")
+                # patch_offset 缺省 0
+                off = m.get("patch_offset", 0)
+                if not isinstance(off, int) or off < 0:
+                    res.add_error(where, f"mod {mid!r} patch_offset 必须是 ≥0 整数")
+            elif mt == "code_inject":
+                if not m.get("asm_code"):
+                    res.add_error(where, f"mod {mid!r} type=code_inject 缺 asm_code（hex 字符串）")
+                elif _parse_hex_bytes_check(m["asm_code"]) is not True:
+                    res.add_error(where, f"mod {mid!r} asm_code 不是合法 hex")
+                hs = m.get("hook_size", 5)
+                if not isinstance(hs, int) or hs < 5 or hs > 32:
+                    res.add_error(where, f"mod {mid!r} hook_size={hs} 必须在 [5..32]")
+                # code_inject 必须有 aob（命中点就是 hook 位置）
+                if not m.get("aob"):
+                    res.add_error(where, f"mod {mid!r} type=code_inject 缺 aob（命中点 = hook 位置）")
+        res.add_pass(f"AutoAssembler type 校验：{len(mods_list)} 条 mod 检查完")
 
     # --- game.json（可选） ---
     game_path = plugin_dir / "game.json"
