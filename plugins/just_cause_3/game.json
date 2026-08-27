@@ -6,14 +6,8 @@
   "publisher": "Square Enix",
   "release_year": 2015,
   "platform": "Windows",
-  "process": [
-    "JustCause3.exe"
-  ],
-  "genre": [
-    "action",
-    "open_world",
-    "adventure"
-  ],
+  "process": ["JustCause3.exe"],
+  "genre": ["action", "open_world", "adventure"],
   "support": {
     "windows": true,
     "x86": false,
@@ -27,10 +21,10 @@
     "primary": "#E63946",
     "accent": "#F4A261"
   },
+  "sgdb_game_id": 225540,
   "assets": {
     "cover": "assets/cover.jpg",
     "banner": "assets/banner.jpg",
     "icon": "assets/icon.png"
-  },
-  "sgdb_game_id": 2403
+  }
 }
