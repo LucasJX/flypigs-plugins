@@ -4,6 +4,7 @@
   "process": "gamemd.exe",
   "engine": "ra2_pipe",
   "version": "1.1.1",
+  "features_count": 31,
   "engine_min": "1.0.0",
   "author": "Flypigs",
   "launch": "E:\\hongjingRA2\\RA2 2022",

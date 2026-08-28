@@ -188,15 +188,36 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
         else:
             res.add_pass(f"memory.json 合法 ({mem_path.stat().st_size}B)")
 
-    # features_count 一致性（memory.mods 优先，无则回退 manifest.features）
+    # features_count 一致性（manifest 必填，对齐主功能集合数 = features.length - 备用 _2/_alt/_备用）
     features_list = mf.get("features") if isinstance(mf.get("features"), list) else []
     mods_list = mem.get("mods") if mem and isinstance(mem.get("mods"), list) else []
     features_count = mf.get("features_count")
-    if isinstance(features_count, int):
-        expected = len(mods_list) if mods_list else len(features_list)
-        source_name = "memory.mods.length" if mods_list else "manifest.features.length"
-        if features_count != expected:
-            res.add_warning(where, f"manifest.features_count={features_count} 应等于 {expected}（{source_name}）")
+    if features_count is None:
+        res.add_error(where, "manifest.features_count 必填（Plugin Spec v1.0）")
+    else:
+        # 主 mod 集合：去掉 _2/_alt/_备用 后缀的备用 mod
+        main_features_count = sum(
+            1 for f in features_list if isinstance(f, dict) and f.get("id")
+            and not any(f.get("id", "").endswith(suf) for suf in ("_2", "_alt", "_备用"))
+        )
+        if isinstance(features_count, int) and features_count != main_features_count:
+            res.add_error(where,
+                f"manifest.features_count={features_count} 应等于主功能数 {main_features_count}（去除备用 _2/_alt/_备用）")
+
+    # 1:1 对齐（Plugin Spec v1.0 铁律）：manifest.features[].id 与 memory.mods[].id 必须一一对应
+    # （备用 mod 用 suffix _alt / _2 / _备用 会被识别为非主 mod，跳过对齐要求）
+    if features_list and mods_list:
+        main_features = [f.get("id") for f in features_list if isinstance(f, dict) and f.get("id")]
+        main_mods = [m.get("id") for m in mods_list if isinstance(m, dict) and m.get("id")
+                     and not any(m.get("id", "").endswith(suf) for suf in ("_alt", "_2", "_备用"))]
+        only_in_features = set(main_features) - set(main_mods)
+        only_in_mods = set(main_mods) - set(main_features)
+        if only_in_features:
+            res.add_warning(where,
+                f"manifest 有但 memory 无（声明了 UI 但没实现）: {sorted(only_in_features)}")
+        if only_in_mods:
+            res.add_warning(where,
+                f"memory 有但 manifest 无（实现了但没暴露给 UI）: {sorted(only_in_mods)}")
 
     # 归组铁律：memory.mods[].group 必须命中 manifest.groups（**这条才是真正的"分组铁律"**）
     if mods_list and isinstance(groups, list):
@@ -233,9 +254,17 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
                     res.add_error(where, f"mod {mid!r} patch_offset 必须是 ≥0 整数")
             elif mt == "code_inject":
                 if not m.get("asm_code"):
-                    res.add_error(where, f"mod {mid!r} type=code_inject 缺 asm_code（hex 字符串）")
-                elif _parse_hex_bytes_check(m["asm_code"]) is not True:
-                    res.add_error(where, f"mod {mid!r} asm_code 不是合法 hex")
+                    res.add_error(where, f"mod {mid!r} type=code_inject 缺 asm_code")
+                else:
+                    if _parse_hex_bytes_check(m["asm_code"]) is not True:
+                        # asm 文本格式（多行 / 含 mnemonics），MemoryEngine.AsmHelper 会用自实现汇编器编码
+                        # 加 warning 而非 error：asm 文本经 AsmHelper 编译后仍是合法机器码，
+                        # 但 AsmHelper 只支持有限指令集（mov/add/sub/jmp/call 等），
+                        # 写出来的 SIMD/复杂指令会在游戏内运行时报 NotSupportedException
+                        res.add_warning(where,
+                            f"mod {mid!r} asm_code 是 asm 文本格式（不是 hex）——"
+                            f"需 MemoryEngine.AsmHelper 支持，未测指令可能运行时报错。"
+                            f"Plugin Spec v1.0 建议优先 hex 字节，文本仅作过渡")
                 hs = m.get("hook_size", 5)
                 if not isinstance(hs, int) or hs < 5 or hs > 32:
                     res.add_error(where, f"mod {mid!r} hook_size={hs} 必须在 [5..32]")

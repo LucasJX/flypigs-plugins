@@ -12,11 +12,11 @@
       "engine_min": "1.0.0",
       "version": "1.1.1",
       "author": "Flypigs",
-      "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，共 32 项。",
+      "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，31 项主功能 + 1 项阵营保护专用 mod。",
       "icon": null,
       "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/ra2_yr/ra2_yr-1.1.1.zip",
-      "sha256": "34ed83b94ffa0023b2eff4c8425d9472f4802881c84ee4d13e33d7e9cbbf2af0",
-      "size": 3920,
+      "sha256": "48181f3440719bdffc161c781eac1a55d38312e4a2ac3700f3fad41cf3ac2a59",
+      "size": 3929,
       "min_app": "1.0.0",
       "groups": [
         "经济",
@@ -27,7 +27,7 @@
         "任务调速",
         "阵营保护"
       ],
-      "features_count": 32,
+      "features_count": 31,
       "updated_at": "2026-08-26T11:55:00Z",
       "sgdb_game_id": 38629
     },
@@ -40,11 +40,11 @@
       "engine_min": "1.0.0",
       "version": "1.0.3",
       "author": "Flypigs (功能参考风灵月影)",
-      "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，共 17 项。",
+      "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
       "icon": null,
       "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.0.3.zip",
-      "sha256": "0a5cfd08c5d28e6f629a505bc1190523d429f06bd19053d6b119f4dfa0e92e30",
-      "size": 3362,
+      "sha256": "2126a5ae11710f44c5daef501097d90eb3892cd417ff8b9b1418941b270232b0",
+      "size": 3404,
       "min_app": "1.0.0",
       "groups": [
         "角色",
@@ -55,7 +55,7 @@
       ],
       "features_count": 16,
       "updated_at": "2026-08-27T12:36:23Z",
-      "sgdb_game_id": 225540
+      "sgdb_game_id": 2403
     }
   ]
 }

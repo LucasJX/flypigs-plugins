@@ -1,4 +1,4 @@
-﻿{
+{
   "id": "just_cause_3",
   "name": "正当防卫3 (Just Cause 3)",
   "process": "JustCause3.exe",
@@ -8,7 +8,8 @@
   "author": "Flypigs (功能参考风灵月影 Plus 17 Trainer)",
   "launch": "",
   "game": "JC3",
-  "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，共 17 项。",
+  "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
+  "features_count": 16,
   "groups": [
     "角色",
     "武器",
