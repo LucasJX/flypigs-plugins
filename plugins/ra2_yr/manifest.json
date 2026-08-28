@@ -4,7 +4,7 @@
   "process": "gamemd.exe",
   "engine": "ra2_pipe",
   "version": "1.1.1",
-  "features_count": 31,
+  "features_count": 32,
   "engine_min": "1.0.0",
   "author": "Flypigs",
   "launch": "E:\\hongjingRA2\\RA2 2022",
@@ -256,6 +256,14 @@
       "fn_label": "PauseGame",
       "fn_kind": "checkbox",
       "group": "战场控制"
+    },
+    {
+      "id": "protected",
+      "name": "阵营保护",
+      "type": "button",
+      "fn_label": "",
+      "fn_kind": "protected_list",
+      "group": "阵营保护"
     }
   ],
   "groups": [

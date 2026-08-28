@@ -8,8 +8,8 @@
      文件名 <id>-<version>.zip 与 manifest.id/version 一致
   4. manifest.json 合法，字段齐全；features_count == features.length
   5. **groups 铁律**：有序数组、去重；每条 feature 都命中（未命中归"其他" + 报警告）
-  6. fn_kind ∈ {button, checkbox, slider, input, select, multi_select}
-  7. 除 button 外，fn_label 必填
+  6. fn_kind ∈ {button, checkbox, slider, input, select, multi_select, protected_list}
+  7. 除 button/protected_list 外，fn_label 必填（protected_list 走整个阵营列表协议，不是单 label）
   8. memory.json / game.json（可选）合法
   9. zip 内 manifest.json 与仓根 manifest.json 内容字节相同
  10. zip 内无越界路径（zip-slip 防护）
@@ -36,7 +36,9 @@ from typing import Any
 
 # --- 常量 ---
 
-VALID_FN_KIND = {"button", "checkbox", "slider", "input", "select", "multi_select"}
+VALID_FN_KIND = {"button", "checkbox", "slider", "input", "select", "multi_select", "protected_list"}
+# 这些 kind 走「列表/特殊协议」，不需要单个 fn_label
+LABEL_OPT_OUT_KIND = {"button", "protected_list"}
 PATH_SAFE = re.compile(r"^([A-Za-z0-9_./-]+)$")
 
 RED = "\033[31m"
@@ -174,7 +176,7 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             # 判定：manifest.engine 以 *_pipe 结尾（含 ra2_pipe / pipe_x / ...）一律视为注入式
             engine = mf.get("engine", "") or ""
             is_pipe_engine = engine.endswith("_pipe")
-            if is_pipe_engine and fkind != "button" and not ft.get("fn_label"):
+            if is_pipe_engine and fkind not in LABEL_OPT_OUT_KIND and not ft.get("fn_label"):
                 res.add_error(where, f"feature {fid!r} (kind={fkind}, engine={engine}) 缺 fn_label — 注入式引擎必需")
             # group 命中检查留给 memory.mods（manifest.features 是 UI 描述，不要求 group）
 
