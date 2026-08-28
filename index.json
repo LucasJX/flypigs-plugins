@@ -15,8 +15,8 @@
       "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，31 项主功能 + 1 项阵营保护专用 mod。",
       "icon": null,
       "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/ra2_yr/ra2_yr-1.1.1.zip",
-      "sha256": "48181f3440719bdffc161c781eac1a55d38312e4a2ac3700f3fad41cf3ac2a59",
-      "size": 3929,
+      "sha256": "c80073300ce1105fcca5ca45faad6c30cda2db928941fa26bcf100b61ca96a96",
+      "size": 3992,
       "min_app": "1.0.0",
       "groups": [
         "经济",

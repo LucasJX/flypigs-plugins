@@ -14,217 +14,248 @@
       "name": "应用修改",
       "type": "button",
       "fn_label": "Apply",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "经济"
     },
     {
       "id": "iam_winner",
       "name": "我即胜利",
       "type": "button",
       "fn_label": "IAMWinner",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "战场控制"
     },
     {
       "id": "delete_unit",
       "name": "删除单位",
       "type": "button",
       "fn_label": "DeleteUnit",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "单位操作"
     },
     {
       "id": "clear_shroud",
       "name": "揭开黑幕",
       "type": "button",
       "fn_label": "ClearShroud",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "战场控制"
     },
     {
       "id": "give_me_a_bomb",
       "name": "给我炸弹",
       "type": "button",
       "fn_label": "GiveMeABomb",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "战场控制"
     },
     {
       "id": "unit_level_up",
       "name": "单位升级",
       "type": "button",
       "fn_label": "UnitLevelUp",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "单位操作"
     },
     {
       "id": "unit_speed_up",
       "name": "单位加速",
       "type": "button",
       "fn_label": "UnitSpeedUp",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "单位操作"
     },
     {
       "id": "fast_build",
       "name": "快速建造",
       "type": "button",
       "fn_label": "FastBuild",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "建造"
     },
     {
       "id": "this_is_mine",
       "name": "据为己有",
       "type": "button",
       "fn_label": "ThisIsMine",
-      "fn_kind": "button"
+      "fn_kind": "button",
+      "group": "单位操作"
     },
     {
       "id": "adjust_game_speed",
       "name": "调整游戏速度",
       "type": "slider",
       "fn_label": "AdjustGameSpeed",
-      "fn_kind": "slider"
+      "fn_kind": "slider",
+      "group": "任务调速"
     },
     {
       "id": "god",
       "name": "上帝模式",
       "type": "checkbox",
       "fn_label": "God",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "inst_build",
       "name": "瞬间建造",
       "type": "checkbox",
       "fn_label": "InstBuild",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "建造"
     },
     {
       "id": "unlimit_super_weapon",
       "name": "超级武器无限",
       "type": "checkbox",
       "fn_label": "UnlimitSuperWeapon",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "inst_fire",
       "name": "瞬间开火",
       "type": "checkbox",
       "fn_label": "InstFire",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "inst_turn",
       "name": "瞬间转向",
       "type": "checkbox",
       "fn_label": "InstTurn",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "range_to_your_base",
       "name": "射程覆盖你家",
       "type": "checkbox",
       "fn_label": "RangeToYourBase",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "fire_to_your_base",
       "name": "火力覆盖你家",
       "type": "checkbox",
       "fn_label": "FireToYourBase",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "freeze_gap_generator",
       "name": "冻结裂缝产生器",
       "type": "checkbox",
       "fn_label": "FreezeGapGenerator",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战场控制"
     },
     {
       "id": "sell_the_world",
       "name": "出售全世界",
       "type": "checkbox",
       "fn_label": "SellTheWorld",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "经济"
     },
     {
       "id": "build_everywhere",
       "name": "随地建造",
       "type": "checkbox",
       "fn_label": "BuildEveryWhere",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "建造"
     },
     {
       "id": "auto_repair",
       "name": "自动维修",
       "type": "checkbox",
       "fn_label": "AutoRepair",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "建造"
     },
     {
       "id": "socialism_majesty",
       "name": "社会主义威严",
       "type": "checkbox",
       "fn_label": "SocialismMajesty",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "经济"
     },
     {
       "id": "make_captured_mine",
       "name": "占领即矿场",
       "type": "checkbox",
       "fn_label": "MakeCapturedMine",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "单位操作"
     },
     {
       "id": "make_garrisoned_mine",
       "name": "驻军即矿场",
       "type": "checkbox",
       "fn_label": "MakeGarrisonedMine",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "单位操作"
     },
     {
       "id": "invade_mode",
       "name": "入侵模式",
       "type": "checkbox",
       "fn_label": "InvadeMode",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "单位操作"
     },
     {
       "id": "unlimit_tech",
       "name": "全科技",
       "type": "checkbox",
       "fn_label": "UnlimitTech",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "建造"
     },
     {
       "id": "unlimit_fire_power",
       "name": "无限火力",
       "type": "checkbox",
       "fn_label": "UnlimitFirePower",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "inst_chrono",
       "name": "瞬间超时空",
       "type": "checkbox",
       "fn_label": "InstChrono",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战斗增益"
     },
     {
       "id": "spy_spy",
       "name": "间谍渗透",
       "type": "checkbox",
       "fn_label": "SpySpy",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "单位操作"
     },
     {
       "id": "select_enemy",
       "name": "框选敌人",
       "type": "checkbox",
       "fn_label": "SelectEnemy",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "单位操作"
     },
     {
       "id": "pause_game",
       "name": "暂停游戏",
       "type": "checkbox",
       "fn_label": "PauseGame",
-      "fn_kind": "checkbox"
+      "fn_kind": "checkbox",
+      "group": "战场控制"
     }
   ],
   "groups": [
