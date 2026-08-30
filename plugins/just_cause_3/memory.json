@@ -45,7 +45,8 @@
       "asm_code": "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\nmov dword ptr [rax],999\nmov dword ptr [rax+04],999\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
       "group": "武器",
       "hotkey": "NumPad3",
-      "note": "关键：code 段的 cmp dword ptr [rax],04 用于恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4。后面紧跟 0F 87 (ja) 依赖其标志位，缺这条会导致 ja 拿到随机标志、分支错乱崩溃。cmp 必须在 pop rax 之前（此时 rax 仍指向 [r12+s1]）"
+      "conflicts": ["no_reload"],
+      "note": "关键：code 段的 cmp dword ptr [rax],04 用于恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4。后面紧跟 0F 87 (ja) 依赖其标志位，缺这条会导致 ja 拿到随机标志、分支错乱崩溃。cmp 必须在 pop rax 之前（此时 rax 仍指向 [r12+s1]）。与 no_reload 共用同一 AOB，故声明互斥"
     },
     {
       "id": "no_reload",
@@ -61,7 +62,8 @@
       "asm_code": "push rax\nlea rax,[r12+{s1}]\nmov dword ptr [rax+04],99\ncmp dword ptr [rax],04\npop rax",
       "group": "武器",
       "hotkey": "NumPad4",
-      "note": "原版写 [rax+04]=#99（备用弹药），此前误写为 [rax+08]=0。AOB 与 infinite_ammo 相同，两功能同时开启时后一个会被 DLL 的 already hooked 检测拦截并报错（不崩），原版是用 ammo/reload 两个 flag 在同一 cave 内实现的，待后续支持单 hook 多 flag"
+      "conflicts": ["infinite_ammo"],
+      "note": "原版写 [rax+04]=#99（备用弹药），此前误写为 [rax+08]=0。AOB 与 infinite_ammo 相同，两功能同时开启时后一个会被 DLL 的 already hooked 检测拦截并报错（不崩），原版是用 ammo/reload 两个 flag 在同一 cave 内实现的，待后续支持单 hook 多 flag。UI 层已按 conflicts 双向置灰，避免用户点了才报错"
     },
     {
       "id": "infinite_grenades",
@@ -134,10 +136,10 @@
       "aob_vars": {
         "s1": 3
       },
-      "asm_code": "mov rdx,[ptplayer]\ncmp rdx,rdi\njne code\nmov dx,[rdi+{s1}]\nsub dx,dx\ncode:\nmovzx edx,word ptr [rdi+{s1}]",
+      "asm_code": "mov rdx,[ptplayer]\ncmp rdx,rdi\njne notplayer\ncmp dword ptr [health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nnotplayer:\nmov rdx,[ptvehicle]\ncmp rdx,rdi\njne isenemy\ncmp dword ptr [vehicle_health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nisenemy:\ncmp dword ptr [ohk],1\njne code\ncmp bp,0\njle code\nmovzx ebp,word ptr [rdi+{s1}]\ncode:\nmovzx edx,word ptr [rdi+{s1}]",
       "group": "角色",
       "hotkey": "NumPad0",
-      "note": "关键：code 段必须恢复 movzx edx,word ptr [rdi+s1]（被 hook 的原指令，7字节），此前误写为 sub dx,bp（那是 AOB 之后的指令，不是被 hook 的那条）。movzx 会清零 edx 高位，sub dx,bp 只改低 16 位且保留高位，后续代码用 edx 时值错误会崩溃"
+      "note": "按风灵月影 aobohk 完整复现三分支：①rdi==ptplayer 且 health=1 → xor ebp,ebp（伤害清零）②rdi==ptvehicle 且 vehicle_health=1 → 同上 ③其他对象（敌人）且 ohk=1 → movzx ebp,[rdi+s1]（把 bp 设为当前血量，后续扣减后归零）。此前版本改的是 dx 而非 bp，且被 code 段的 movzx edx 覆盖，等于完全无效。code 段恢复被 hook 的原指令 movzx edx,word ptr [rdi+s1]"
     },
     {
       "id": "infinite_oxygen",
@@ -160,9 +162,10 @@
       "module": "JustCause3.exe",
       "aob": "48 83 C0 10 49 3B C0 75 ?? E8 ?? ?? ?? ?? 2B F8 85 FF",
       "hook_size": 7,
-      "asm_code": "xor edi,edi\nadd rax,10\ncmp rax,r8\nnop",
+      "asm_code": "xor edi,edi\nadd rax,0x10\ncmp rax,r8\nnop",
       "group": "抓钩装备",
-      "hotkey": ""
+      "hotkey": "",
+      "note": "立即数必须写 0x10：原指令是 48 83 C0 10（add rax,imm8=0x10=16）。裸写 10 会被当十进制 10，抓钩数量计算错误。xor edi,edi 清零计数，add rax,0x10 + cmp rax,r8 恢复被 hook 的两条原指令，与风灵月影 aobhook 脚本一致"
     },
     {
       "id": "unlock_all_gear_mods",
