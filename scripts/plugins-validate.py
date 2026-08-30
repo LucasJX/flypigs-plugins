@@ -189,6 +189,24 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             res.add_error(where, err)
         else:
             res.add_pass(f"memory.json 合法 ({mem_path.stat().st_size}B)")
+            # --- memory.json 语义校验（Plugin Spec v2.0）---
+            # 调用同目录的 plugin-lint.py（失败也不影响本脚本其余检查）。
+            try:
+                import importlib.util as _ilu
+                _spec = _ilu.spec_from_file_location(
+                    "plugin_lint", str(Path(__file__).resolve().parent / "plugin_lint.py"))
+                if _spec and _spec.loader:
+                    _pl = _ilu.module_from_spec(_spec)
+                    _spec.loader.exec_module(_pl)
+                    _me, _mw = _pl.lint_memory(
+                        mem, pid, mem_path.read_bytes(),
+                        engine=(mf.get("engine") or "generic"))
+                    for _e in _me:
+                        res.add_error(where + "/memory", _e)
+                    for _w in _mw:
+                        res.add_warning(where + "/memory", _w)
+            except Exception as _ex:  # 语义检查本身异常不应阻断结构校验
+                res.add_warning(where + "/memory", f"plugin_lint 调用失败（跳过语义检查）: {_ex}")
 
     # features_count 一致性（manifest 必填，对齐主功能集合数 = features.length - 备用 _2/_alt/_备用）
     features_list = mf.get("features") if isinstance(mf.get("features"), list) else []
