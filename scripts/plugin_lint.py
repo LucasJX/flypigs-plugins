@@ -59,7 +59,7 @@ KNOWN_FLAG_VARS = {
 
 CODE_TYPES = ("code_inject", "code_patch")
 ALU_OPS = ("mov", "add", "sub", "and", "or", "xor", "cmp")
-GENERIC_ENGINES = ("generic", "memory", "")
+GENERIC_ENGINES = ("generic", "generic_injected", "memory", "")
 
 
 # --------------------------------------------------------------------------
