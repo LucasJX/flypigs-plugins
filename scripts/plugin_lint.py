@@ -12,10 +12,15 @@
   D. code_inject / code_patch：hook_size 必须 >= 5（jmp rel32 占 5 字节）
   E. aob_vars：每个偏移 offset+2 <= len(aob_bytes)（防 no_recoil 8 字节错位）
   F. conflicts：引用的 id 必须存在；且必须双向声明（A 列 B ⟺ B 列 A）
-  G. asm_code：{var} 占位符必须声明于 aob_vars；
+  G. asm_code：{var} 占位符必须声明于 aob_vars 或 aob_refs；
      mov [mem], imm 缺尺寸前缀（byte/word/dword/qword）→ 错误（8 字节写穿崩溃类）
      add/sub/... [mem], imm 缺尺寸前缀 → 警告
-  H. 共享同一 aob 的多个 mod 必须互相声明 conflicts（否则后开者 AOB not found）
+  H. 共享同一 aob 的多个 mod 必须互相声明 conflicts（否则后开者 AOB not found）；
+     **例外**：通过 hook_owner 复用同一 hook 的 mod（单 hook 多 flag）豁免
+  I. aob_refs（多 AOB 变量引用）：每个 ref 必须有 aob（可解析）+ index（index+2<=len）；
+     引用的 {name} 须在 aob_vars / aob_refs 声明
+  J. 单 hook 多 flag：hook_owner 指向的 id 须存在且为 code_inject；从属 mod 须带 flag
+     且该 flag 须出现在 owner 的 flags 列表；hook_owner 关系不得与 conflicts 矛盾
 
 引擎感知：
   - generic / memory 引擎（数据驱动，AsmHelper 汇编）：跑以上全部检查。
@@ -130,7 +135,31 @@ def _lint_mod(m: dict, mid: str, generic: bool, errors: list, warnings: list) ->
 
         # G. asm_code 检查
         if m.get("asm_code"):
-            _lint_asm(m["asm_code"], mid, av if isinstance(av, dict) else {}, errors, warnings)
+            refs = m.get("aob_refs") if isinstance(m.get("aob_refs"), dict) else {}
+            _lint_asm(m["asm_code"], mid, av if isinstance(av, dict) else {}, refs, errors, warnings)
+
+        # I. aob_refs（多 AOB 变量引用）结构校验
+        arefs = m.get("aob_refs")
+        if arefs is not None:
+            if not isinstance(arefs, dict):
+                errors.append(f"{mid}: aob_refs 必须是对象")
+            else:
+                for rname, rdef in arefs.items():
+                    if not isinstance(rdef, dict):
+                        errors.append(f"{mid}.aob_refs.{rname} 必须是对象 {{aob, index}}")
+                        continue
+                    raob = rdef.get("aob", "")
+                    rn, rok, rmsg = parse_aob(raob)
+                    if not rok:
+                        errors.append(f"{mid}.aob_refs.{rname}: aob 非法 — {rmsg}")
+                        rn = 0
+                    ridx = rdef.get("index")
+                    if not isinstance(ridx, int):
+                        errors.append(f"{mid}.aob_refs.{rname}.index 必须是整数字节索引")
+                    elif rn and (ridx < 0 or ridx + 2 > rn):
+                        errors.append(
+                            f"{mid}.aob_refs.{rname}.index={ridx} 越界：AOB 仅 {rn} 字节，"
+                            f"需满足 0<=index 且 index+2<={rn}（变量为 2 字节）")
     else:
         if not aob:
             errors.append(f"{mid}: type=value 缺 aob（无法定位）")
@@ -138,7 +167,8 @@ def _lint_mod(m: dict, mid: str, generic: bool, errors: list, warnings: list) ->
             warnings.append(f"{mid}: type=value 建议显式写 value_type（默认 int32）")
 
 
-def _lint_asm(asm: str, mid: str, aob_vars: dict, errors: list, warnings: list) -> None:
+def _lint_asm(asm: str, mid: str, aob_vars: dict, aob_refs: dict | None,
+              errors: list, warnings: list) -> None:
     import re
     lines = asm.replace("\r", "").split("\n")
     var_re = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
@@ -151,7 +181,7 @@ def _lint_asm(asm: str, mid: str, aob_vars: dict, errors: list, warnings: list) 
         r"\[\s*[^\]]*?\s*\]\s*,\s*(0x[0-9A-Fa-f]+|-?\d+)\s*$"
     )
 
-    declared = set(aob_vars.keys())
+    declared = set(aob_vars.keys()) | set((aob_refs or {}).keys())
     for i, raw in enumerate(lines, 1):
         line = raw.strip()
         if not line or line.endswith(":") or line.startswith(";"):
@@ -200,6 +230,7 @@ def _lint_conflicts(mods: list, errors: list, warnings: list) -> None:
 
 def _lint_shared_aob(mods: list, errors: list, warnings: list) -> None:
     groups: dict[str, list] = {}
+    hook_owner_of = {m.get("id"): m.get("hook_owner") for m in mods if isinstance(m, dict)}
     for m in mods:
         if not isinstance(m, dict):
             continue
@@ -215,12 +246,63 @@ def _lint_shared_aob(mods: list, errors: list, warnings: list) -> None:
         bad = []
         for a in members:
             for b in members:
-                if a != b and b not in conflict_of.get(a, set()):
-                    bad.append(f"{a}↔{b}")
+                if a == b:
+                    continue
+                if b in conflict_of.get(a, set()):
+                    continue
+                # 豁免：通过 hook_owner 复用同一 hook 的 mod（单 hook 多 flag，合法共存）
+                ho_a, ho_b = hook_owner_of.get(a), hook_owner_of.get(b)
+                if ho_a == b or ho_b == a or (ho_a and ho_a == ho_b):
+                    continue
+                bad.append(f"{a}↔{b}")
         if bad:
             errors.append(
                 f"共用同一 AOB 的 mod {members} 未全部互相声明 conflicts"
-                f"（{', '.join(sorted(set(bad)))}），后启用者会 AOB not found / already hooked")
+                f"（{', '.join(sorted(set(bad)))}）；后启用者会 AOB not found / already hooked"
+                f"。若本就是单 hook 多 flag，请用 hook_owner 关联而非 conflicts")
+
+
+def _lint_multi_flag(mods: list, errors: list, warnings: list) -> None:
+    """J. 单 hook 多 flag（flags / flag / hook_owner）一致性校验。"""
+    by_id = {m.get("id"): m for m in mods if isinstance(m, dict)}
+    conflict_of = {m.get("id"): set(m.get("conflicts") or []) for m in mods if isinstance(m, dict)}
+
+    for m in mods:
+        if not isinstance(m, dict):
+            continue
+        mid = m.get("id")
+        owner = m.get("hook_owner")
+        flag = m.get("flag")
+        flags = m.get("flags")
+
+        # 从属 mod：必须有 hook_owner + flag
+        if owner is not None:
+            if owner not in by_id:
+                errors.append(f"{mid}: hook_owner 指向了不存在的 mod {owner!r}")
+            elif by_id[owner].get("type") != "code_inject":
+                errors.append(f"{mid}: hook_owner {owner!r} 必须是 type=code_inject")
+            else:
+                oflags = by_id[owner].get("flags") or []
+                if not isinstance(oflags, list):
+                    errors.append(f"{mid}: owner {owner!r} 的 flags 必须是数组")
+                elif not flag:
+                    errors.append(f"{mid}: 声明了 hook_owner 但缺 flag（须指定本 mod 控制的 flag 名）")
+                elif flag not in oflags:
+                    errors.append(
+                        f"{mid}: flag {flag!r} 不在 owner {owner!r} 的 flags 列表 {oflags} 中"
+                        f"（cave 内没有对应分支，切换无效）")
+            # hook_owner 关系与 conflicts 矛盾：既共享 hook 又互斥
+            if owner in conflict_of.get(mid, set()) or mid in conflict_of.get(owner, set()):
+                errors.append(
+                    f"{mid} 与 {owner} 既声明 hook_owner 又声明 conflicts，逻辑矛盾"
+                    f"：已合并为单 hook 多 flag 就不应再互斥")
+
+        # owner 的 flags 列表应包含所有从属 mod 引用的 flag（文档完整性，仅警告）
+        if flags is not None:
+            if not isinstance(flags, list):
+                errors.append(f"{mid}: flags 必须是数组")
+            elif owner is not None:
+                warnings.append(f"{mid}: 同时带 flags 与 hook_owner，flags 仅 owner 使用，从属 mod 忽略")
 
 
 # --------------------------------------------------------------------------
@@ -264,6 +346,7 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
     _lint_conflicts(mods, errors, warnings)
     if generic:
         _lint_shared_aob(mods, errors, warnings)
+        _lint_multi_flag(mods, errors, warnings)
     return errors, warnings
 
 
