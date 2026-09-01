@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-09-01T08:09:20Z",
+  "updated_at": "2026-09-01T09:29:23Z",
   "market_base": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
   "plugins": [
     {
@@ -38,13 +38,13 @@
       "process": "JustCause3.exe",
       "engine": "jc3_injected",
       "engine_min": "1.0.0",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "author": "Flypigs (功能参考风灵月影)",
       "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
       "icon": null,
-      "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.0.zip",
-      "sha256": "0a90a1ef398e90c23e7024005f5a298a19c15bfd7335a7f1485b84e8297c45ca",
-      "size": 4797,
+      "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.1.zip",
+      "sha256": "296064d1f88d28eea2610f3d820b45d1f6dd0f7161385d89e3e3c7a3c40bd576",
+      "size": 5590,
       "min_app": "1.0.0",
       "groups": [
         "角色",
@@ -54,7 +54,7 @@
         "游戏系统"
       ],
       "features_count": 16,
-      "updated_at": "2026-09-01T08:09:20Z",
+      "updated_at": "2026-09-01T09:29:23Z",
       "sgdb_game_id": 2403
     }
   ]
