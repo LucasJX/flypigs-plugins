@@ -59,7 +59,28 @@ KNOWN_FLAG_VARS = {
 
 CODE_TYPES = ("code_inject", "code_patch")
 ALU_OPS = ("mov", "add", "sub", "and", "or", "xor", "cmp")
-GENERIC_ENGINES = ("generic", "generic_injected", "memory", "")
+
+# 引擎能力 → 是否数据驱动校验
+# 镜像主仓 EngineRegistry：
+#   data_driven 集合：external_memory（含别名 memory）+ injected_pipe（含别名 jc3_injected/generic_injected）
+#   legacy_label：RA2 专用 fn_label 协议，跳 AOB/asm 但跑 fn_label 校验
+#   未知 engine：报错拒绝（与主仓 EngineRegistry.Resolve() 行为一致）
+_ENGINE_ALIASES = {
+    "external_memory": "data_driven",
+    "memory": "data_driven",
+    "injected_pipe": "data_driven",
+    "jc3_injected": "data_driven",
+    "generic_injected": "data_driven",
+    "legacy_label": "legacy_label",
+    "ra2_pipe": "legacy_label",
+}
+
+
+def _resolve_engine_class(engine: str) -> str | None:
+    """解析 engine 字段，返回能力类别（data_driven / legacy_label / None=未知）。"""
+    if not engine:
+        return None
+    return _ENGINE_ALIASES.get(engine)
 
 
 # --------------------------------------------------------------------------
@@ -90,7 +111,7 @@ def parse_aob(aob: str) -> tuple[int, bool, str]:
 # --------------------------------------------------------------------------
 # 核心：单 mod 校验
 # --------------------------------------------------------------------------
-def _lint_mod(m: dict, mid: str, generic: bool, errors: list, warnings: list) -> None:
+def _lint_mod(m: dict, mid: str, data_driven: bool, errors: list, warnings: list) -> None:
     typ = m.get("type", "value")
 
     # 必备字段（所有引擎）
@@ -98,8 +119,8 @@ def _lint_mod(m: dict, mid: str, generic: bool, errors: list, warnings: list) ->
         if not m.get(fld):
             errors.append(f"{mid}: 缺必备字段 {fld!r}")
 
-    # 管道引擎：AOB/asm 是引擎自有契约，跳过 C/D/E/G/H，只做 conflicts（F）
-    if not generic:
+    # legacy_label：AOB/asm 是引擎自有契约，跳过 C/D/E/G/H/I/J，只做 conflicts（F）
+    if not data_driven:
         return
 
     aob = m.get("aob", "")
@@ -309,8 +330,15 @@ def _lint_multi_flag(mods: list, errors: list, warnings: list) -> None:
 # 对外接口
 # --------------------------------------------------------------------------
 def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
-                engine: str = "generic") -> tuple[list, list]:
-    """返回 (errors, warnings)。可被 plugins-validate.py 调用。"""
+                engine: str = "generic",
+                manifest: dict | None = None) -> tuple[list, list]:
+    """返回 (errors, warnings)。可被 plugins-validate.py 调用。
+
+    manifest：可选的 manifest.json dict。传入后会跑：
+      - 合规红线（P2-22）：online=true / anticheat 字段 / 其它已知红线 → 拒绝
+      - fn_label 枚举校验（P2-20，legacy_label 引擎）：fn_label 必须是 model.h 中的合法字符串
+      - 跨 provider 拒绝（P2-15）：mod.engine 声明且与 manifest.engine 能力不同 → 拒
+    """
     errors: list = []
     warnings: list = []
     if raw_bytes is not None and raw_bytes[:3] == b"\xef\xbb\xbf":
@@ -323,10 +351,27 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
         errors.append("缺少 mods 数组或为空")
         return errors, warnings
 
-    generic = engine in GENERIC_ENGINES
-    if not generic:
+    # P2-22 合规红线（不依赖 engine）：manifest 任何字段踩红线直接拒。
+    if isinstance(manifest, dict):
+        _lint_compliance(manifest, pid, errors, warnings)
+    # P2-15 跨 provider 拒绝（不依赖 engine 解析）：mod.engine 必须与 manifest.engine 同能力类。
+    _lint_cross_provider(mods, engine, errors, warnings)
+
+    klass = _resolve_engine_class(engine)
+    if klass is None:
+        # 自用场景下未声明 engine 不阻断打包，只提示（自用作者通常自己清楚在写什么）
         warnings.append(
-            f"引擎 {engine!r} 为管道引擎，跳过 AOB/asm 语义检查（由引擎自身保证）；"
+            f"manifest.engine={engine!r} 未知（按主仓 EngineRegistry 别名表应是 external_memory "
+            f"/ injected_pipe / legacy_label；旧别名 memory/jc3_injected/generic_injected/ra2_pipe "
+            f"仍兼容）。引擎将按未知处理，路由可能退化。")
+        # 不 return，继续走 lint（按 data_driven 默认走校验）
+    # P2-20 fn_label 校验（仅 legacy_label 引擎有意义）：fn_label 必须是 model.h::FnLabel 合法字串。
+    if klass == "legacy_label":
+        _lint_fn_labels(mods, errors, warnings)
+    data_driven = klass == "data_driven"
+    if not data_driven:
+        warnings.append(
+            f"引擎 {engine!r}（{klass}）：跳过 AOB/asm 语义检查（由引擎自身保证）；"
             f"仅校验 conflicts 双向一致性")
 
     seen: set = set()
@@ -341,13 +386,133 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
         if mid in seen:
             errors.append(f"mod id 重复: {mid}")
         seen.add(mid)
-        _lint_mod(m, mid, generic, errors, warnings)
+        _lint_mod(m, mid, data_driven, errors, warnings)
 
     _lint_conflicts(mods, errors, warnings)
-    if generic:
+    if data_driven:
         _lint_shared_aob(mods, errors, warnings)
         _lint_multi_flag(mods, errors, warnings)
     return errors, warnings
+
+
+# --------------------------------------------------------------------------
+# P2-22 合规红线 / P2-15 跨 provider / P2-20 fn_label 校验
+# 镜像 src/engines/ra2_yr/src/protocol/model.h::FnLabel 与 EngineRegistry 能力表。
+# --------------------------------------------------------------------------
+# P2-20：fn_label 合法集合。来源：model.h::FnLabel，去除 kInvalid / kCount 元数据。
+_VALID_FN_LABELS = frozenset({
+    # Button
+    "Apply", "IAMWinner", "DeleteUnit", "ClearShroud", "GiveMeABomb",
+    "UnitLevelUp", "UnitSpeedUp", "FastBuild", "ThisIsMine",
+    # Checkbox
+    "God", "InstBuild", "UnlimitSuperWeapon", "InstFire", "InstTurn",
+    "RangeToYourBase", "FireToYourBase", "FreezeGapGenerator",
+    "SellTheWorld", "BuildEveryWhere", "AutoRepair", "SocialismMajesty",
+    "MakeCapturedMine", "MakeGarrisonedMine", "InvadeMode", "UnlimitTech",
+    "UnlimitFirePower", "InstChrono", "SpySpy", "SelectEnemy", "PauseGame",
+    # Slider
+    "AdjustGameSpeed",
+})
+# P2-20：fn_kind 取值集合（前端 UI 渲染依据）。注："protected_list" 是 RA2 引擎
+# 阵营保护列表事件的专用类型（model.h::MakeProtectedListEvent），fn_label 字段对它为
+# 空字串（label = kInvalid），是合法状态，不应误报。
+_VALID_FN_KINDS = frozenset({"button", "checkbox", "slider", "input", "protected_list"})
+# P2-22 合规红线：禁止的 manifest 字段 / 取值。
+_FORBIDDEN_MANIFEST_FIELDS = frozenset({
+    "online",            # 单机离线承诺；任何联网字段直接拒
+    "anticheat",         # 反作弊对抗
+    "bypass_anticheat",
+    "disable_anticheat",
+})
+
+
+def _lint_compliance(manifest: dict, pid: str, errors: list, warnings: list) -> None:
+    """合规软提示（自用场景）。
+
+    原 P2-22 设计为 error 阻断打包：考虑"对外分发"怕第三方插件夹带 online:true / anticheat 旁路。
+    但 Flypigs 是个人自用工具（你 = 插件作者 = 维护者），这些字段你清楚自己在写什么，
+    没必要把"防自己"的约束做成阻断。所以降级为 warning，但仍打印显眼提示。
+    """
+    if not isinstance(manifest, dict):
+        return
+    # 1) 已知敏感字段名 → warning（不阻断）
+    for bad in _FORBIDDEN_MANIFEST_FIELDS:
+        if bad in manifest:
+            warnings.append(
+                f"manifest.{bad}={manifest[bad]!r}：自用场景下此字段无意义"
+                f"（单机离线承诺/反作弊对抗），但保留以便你自查")
+    # 2) 任何 *online*/*server*/*cloud* 字段名 → warning
+    for k in manifest.keys():
+        kl = k.lower()
+        if kl in ("online", "server", "cloud", "remote_sync", "telemetry"):
+            warnings.append(
+                f"manifest.{k}={manifest[k]!r}：自用场景下此字段无意义"
+                f"（字段名包含 online/server/cloud）")
+
+
+def _lint_cross_provider(mods: list, manifest_engine: str, errors: list, warnings: list) -> None:
+    """跨能力类提示（自用场景）。
+
+    原 P2-15 设计为 error 阻断打包（防止 mod 加载到错的引擎崩游戏）。
+    自用场景：你 = 插件作者，加载器会把 mod 默默丢/失效或交给错的汇编器处理，
+    崩游戏的后果由你承担——所以阻断 lint 没必要，但显眼提示仍然有价值。
+    """
+    if not isinstance(mods, list):
+        return
+    manifest_klass = _resolve_engine_class(manifest_engine) or "unknown"
+    for m in mods:
+        if not isinstance(m, dict):
+            continue
+        mod_engine = m.get("engine")
+        if not mod_engine:
+            continue
+        mod_klass = _resolve_engine_class(mod_engine)
+        if mod_klass is None:
+            warnings.append(
+                f"{m.get('id','?')}: mod.engine={mod_engine!r} 未知（与 manifest.engine"
+                f"={manifest_engine!r} 不在同一能力表，加载器可能按 unknown 处理）")
+            continue
+        if mod_klass != manifest_klass:
+            warnings.append(
+                f"{m.get('id','?')}: mod.engine={mod_engine!r}（{mod_klass}）"
+                f"与 manifest.engine={manifest_engine!r}（{manifest_klass}）"
+                f"属于不同能力类（跨 provider，会被加载器默默丢掉或交给错的汇编器处理）")
+
+
+def _lint_fn_labels(mods: list, errors: list, warnings: list) -> None:
+    """fn_label 拼错软提示（自用场景）。
+
+    RA2 引擎走 WS 协议直接调 yrtr::FnLabel 字串。字串拼错的话 StrToFnLabel 返回
+    kInvalid，事件被静默丢弃 —— 开关按下去没反应。
+    原 P2-20 设计为 error 阻断；自用场景下你 = 插件作者，拼错时 lint 给显眼提示即可，
+    阻断打包反而碍事（可能你正在试新功能，临时拼错是常态）。
+    """
+    if not isinstance(mods, list):
+        return
+    for m in mods:
+        if not isinstance(m, dict):
+            continue
+        mid = m.get("id", "?")
+        fnl = m.get("fn_label")
+        if not fnl:  # None 或空字串：非 fn_label 类 mod（如 protected_list 阵营保护），合法
+            fk = m.get("fn_kind")
+            if fk is not None and fk not in _VALID_FN_KINDS:
+                warnings.append(
+                    f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(_VALID_FN_KINDS)}，"
+                    f"前端可能渲染成通用按钮")
+            continue
+        if fnl not in _VALID_FN_LABELS:
+            # 自用场景降为 warning：拼错字串只会让"按下没反应"，崩游戏的概率小且后果可控
+            warnings.append(
+                f"{mid}: fn_label={fnl!r} 不在 RA2 协议枚举中（src/engines/ra2_yr/src/"
+                f"protocol/model.h::FnLabel），拼错的话引擎 StrToFnLabel 返回 kInvalid → "
+                f"事件被静默丢弃，开关按下没反应")
+            continue
+        fk = m.get("fn_kind")
+        if fk is not None and fk not in _VALID_FN_KINDS:
+            warnings.append(
+                f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(_VALID_FN_KINDS)}，"
+                f"前端可能渲染成通用按钮")
 
 
 # --------------------------------------------------------------------------
@@ -361,14 +526,15 @@ def _lint_path(p: Path) -> tuple[list, list]:
         return [f"JSON 解析失败: {e.msg} (第 {e.lineno} 行)"], []
     pid = p.parent.name
     engine = "generic"
+    manifest: dict | None = None
     mf_path = p.parent / "manifest.json"
     if mf_path.exists():
         try:
-            mf = json.loads(mf_path.read_text(encoding="utf-8-sig"))
-            engine = mf.get("engine", "generic") or "generic"
+            manifest = json.loads(mf_path.read_text(encoding="utf-8-sig"))
+            engine = manifest.get("engine", "generic") or "generic"
         except Exception:
             pass
-    return lint_memory(mem, pid, raw, engine)
+    return lint_memory(mem, pid, raw, engine, manifest)
 
 
 def main() -> int:

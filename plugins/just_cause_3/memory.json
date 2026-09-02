@@ -45,7 +45,7 @@
         "s1": 4,
         "s2": 22
       },
-      "asm_code": "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+60]\nadd rcx,{s2}\nmov edx,[rax]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [rax+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
+      "asm_code": "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+60]\nadd rcx,{s2}\nmov edx,[r12+{s1}]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [r12+{s1}+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
       "flags": ["ammo", "reload"],
       "flag": "ammo",
       "group": "武器",
