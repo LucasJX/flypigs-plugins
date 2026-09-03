@@ -1,259 +1,265 @@
-{
-  "mods": [
-    {
-      "id": "infinite_health",
-      "name": "无限生命",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "0F BF 82 ?? ?? 00 00 ?? 89 ?? 04 ?? 89 ?? 0C 66 0F 6E ?? 0F BF ?? ?? ?? 00 00",
-      "hook_size": 7,
-      "aob_vars": {
-        "s1": 3,
-        "s2": 22
-      },
-      "asm_code": "mov [ptplayer],rdx\ncmp dword ptr [health],1\njne code\nmov ax,[rdx+{s2}]\nmov [rdx+{s1}],ax\ncode:\nmovsx eax,word ptr [rdx+{s1}]",
-      "group": "角色",
-      "hotkey": "NumPad1",
-      "note": "与风灵月影 aobhealth 脚本一致：code 段用 movsx eax,word ptr [rdx+s1] 恢复被 hook 的原指令"
-    },
-    {
-      "id": "infinite_vehicle_health",
-      "name": "无限载具生命",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "48 83 B9 ?? ?? 00 00 00 0F 84 ?? ?? 00 00 80 B9 ?? ?? 00 00 00 0F 84 ?? ?? 00 00 ?? ?? ?? ?? 8B ?? ?? ?? 00 00",
-      "hook_size": 8,
-      "aob_vars": {
-        "s1": 3
-      },
-      "aob_refs": {
-        "sr1": { "aob": "0F B7 ?? ?? ?? 00 00 48 8B ?? ?? ?? ?? 66 ?? ?? ?? ?? ?? FF 90", "index": 3 }
-      },
-      "asm_code": "push rbx\nmov rbx,[rcx+{s1}]\nmov [ptvehicle],rbx\ncmp dword ptr [vehicle_health],1\njne code\ntest rbx,rbx\nje code\nmov word ptr [rbx+{sr1}],9999\ncode:\ntest rbx,rbx\npop rbx",
-      "group": "载具",
-      "hotkey": "NumPad2",
-      "note": "blood 偏移 sr1 来自第二个 AOB aobhpoffsetcheck（FLiNG 原版）：引擎扫描它并在偏移 2 处读 2 字节（ReadInt16）得到载具血量字段偏移，cave 写 [rbx+sr1]=#9999。aob_refs 缺失会直接 prepare 失败，不再退化写错字段（之前写 [rbx+0] 无效）。code 段 test rbx,rbx 恢复被 hook 的原指令 cmp qword ptr [rcx+disp32],0 的标志"
-    },
-    {
-      "id": "infinite_ammo",
-      "name": "无限弹药",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "41 83 BC 24 ?? ?? 00 00 04 0F 87 ?? ?? ?? ?? 48 8B 4E 60 48 81 C1 ?? ?? 00 00 41 8B 9C 24 ?? ?? 00 00",
-      "hook_size": 9,
-      "aob_vars": {
-        "s1": 4,
-        "s2": 22
-      },
-      "asm_code": "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+60]\nadd rcx,{s2}\nmov edx,[r12+{s1}]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [r12+{s1}+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
-      "flags": ["ammo", "reload"],
-      "flag": "ammo",
-      "group": "武器",
-      "hotkey": "NumPad3",
-      "note": "v2.9 单 hook 多 flag：本 mod 是 hook_owner，cave 内含 ammo/reload 两个分支，各自用命名 flag [ammo]/[reload] 门控（flag 槽位在共享变量区，由 ResolveAsmVars 解析）。no_reload 通过 hook_owner 复用本 hook，仅把 reload flag 置 1，两者可同时开启。code 段 cmp dword ptr [rax],04 恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4（其后 0F 87 ja 依赖该标志）；rax 在顶部 lea 后未变，到结尾仍指向 [r12+s1]。v2.10 修复：ammo 分支不再直接写 999 到 [rax]，改为与风灵月影一致——从 [rsi+60]+s2 构建弹药表基址 rcx，读 [rax] 作为武器索引 edx，从备用弹药表 [rcx+rdx*4+0x1F0] 读真实弹药量 ebx，写入当前弹药表 [rcx+rdx*4+0x1B0]。直接写 999 破坏了游戏内部弹药数据结构一致性，导致游戏崩溃"
-    },
-    {
-      "id": "no_reload",
-      "name": "无需换弹",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "41 83 BC 24 ?? ?? 00 00 04 0F 87 ?? ?? ?? ?? 48 8B 4E 60 48 81 C1 ?? ?? 00 00 41 8B 9C 24 ?? ?? 00 00",
-      "hook_size": 9,
-      "aob_vars": {
-        "s1": 4,
-        "s2": 22
-      },
-      "asm_code": "push rax\nlea rax,[r12+{s1}]\nmov dword ptr [rax+04],99\ncmp dword ptr [rax],04\npop rax",
-      "hook_owner": "infinite_ammo",
-      "flag": "reload",
-      "group": "武器",
-      "hotkey": "NumPad4",
-      "note": "v2.9 从属 mod：复用 infinite_ammo 的 hook（hook_owner），仅把 reload flag 置 1，由共享 cave 的 reload 分支执行 [rax+04]=99。本 mod 的 asm_code 运行时不会被汇编（从属 mod 走 flag 路径），保留仅作文档与 asm-verify 参考。两者可同时开启，UI 互斥已解除"
-    },
-    {
-      "id": "infinite_grenades",
-      "name": "无限手雷",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "8B 97 ?? ?? 00 00 E8 ?? ?? ?? ?? 85 C0 74 ?? ?? ?? ?? 30 32",
-      "hook_size": 6,
-      "aob_vars": {
-        "s1": 2
-      },
-      "asm_code": "mov edx,[rdi+{s1}]\nmov dword ptr [rcx+rdx*4+0x1B0],9\nnop",
-      "group": "武器",
-      "hotkey": "NumPad5",
-      "note": "与风灵月影 aobgrenades 一致：mov edx,[rdi+s1] 即恢复被 hook 的原指令"
-    },
-    {
-      "id": "super_accuracy",
-      "name": "超级精准",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 11 8F ?? ?? 00 00 0F 28 ?? F3 ?? 0F 59",
-      "hook_size": 8,
-      "aob_vars": {
-        "s1": 4
-      },
-      "asm_code": "xorps xmm1,xmm1\nmovss [rdi+{s1}],xmm1\nnop\nnop\nnop",
-      "group": "武器",
-      "hotkey": "NumPad6"
-    },
-    {
-      "id": "no_recoil",
-      "name": "无后坐力",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 11 87 ?? ?? 00 00 48 8B 87 ?? ?? 00 00 48 2B ?? ?? ?? 00 00 48 C1 ?? 03 83 ?? 01 76 ?? 80 ?? ?? ?? 00 00 00 74",
-      "base_offset": 8,
-      "hook_size": 7,
-      "aob_vars": {
-        "s1": 4,
-        "s2": 11
-      },
-      "asm_code": "lea rax,[rdi+{s1}]\nmov dword ptr [rax-08],0\nmov dword ptr [rax],0\nmov dword ptr [rax+04],0\nmov rax,[rdi+{s2}]",
-      "group": "武器",
-      "hotkey": "NumPad7",
-      "note": "hook 点必须是 AOB+8（不是 +0），风灵月影写作 aobrecoil+08。+0 处是 movss [rdi+s1],xmm0（8字节）不应被覆盖；+8 处才是 mov rax,[rdi+s2]（7字节），cave 末尾的 mov rax,[rdi+s2] 即为恢复。s2 偏移此前误写为 14，AOB 索引 11 才是 s2"
-    },
-    {
-      "id": "rapid_fire",
-      "name": "快速射击",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 10 87 ?? ?? 00 00 0F 2F ?? 72 ?? 48 ?? ?? 44",
-      "hook_size": 8,
-      "aob_vars": {
-        "s1": 4
-      },
-      "asm_code": "push rax\nmov rax,[ptgun]\ncmp rax,rdi\njne code\nmov dword ptr [rdi+{s1}],0x4479C000\ncode:\nmovss xmm0,[rdi+{s1}]\npop rax",
-      "group": "武器",
-      "hotkey": "NumPad8",
-      "note": "0x4479C000 = (float)999，与风灵月影 mov [rdi+s1],(float)999 一致。末尾 movss xmm0,[rdi+s1] 恢复被 hook 的原指令。原版还有 cmp [rapid_fire],1 开关检查，本引擎以 flag 变量恒为 1 等效"
-    },
-    {
-      "id": "one_hit_kills",
-      "name": "一击必杀",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "0F B7 97 ?? ?? 00 00 48 8B ?? ?? ?? ?? 66 2B D5 ?? ?? ?? FF 90",
-      "hook_size": 7,
-      "aob_vars": {
-        "s1": 3
-      },
-      "asm_code": "mov rdx,[ptplayer]\ncmp rdx,rdi\njne notplayer\ncmp dword ptr [health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nnotplayer:\nmov rdx,[ptvehicle]\ncmp rdx,rdi\njne isenemy\ncmp dword ptr [vehicle_health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nisenemy:\ncmp dword ptr [ohk],1\njne code\ncmp bp,0\njle code\nmovzx ebp,word ptr [rdi+{s1}]\ncode:\nmovzx edx,word ptr [rdi+{s1}]",
-      "group": "角色",
-      "hotkey": "NumPad0",
-      "note": "AOB 必须用风灵脚本块#7（66 2B D5，2B/3B 编码方向），不能用#6（66 29 EA，29/39 方向）：同一编译器对整套二进制使用一致的操作数方向编码，本机无限抓钩命中的是 49 3B C0/2B F8（2B/3B 方向），故一击必杀也必为 66 2B D5 版本，#6 永远扫不到。按风灵月影 aobohk 完整复现三分支：①rdi==ptplayer 且 health=1 → xor ebp,ebp（伤害清零）②rdi==ptvehicle 且 vehicle_health=1 → 同上 ③其他对象（敌人）且 ohk=1 → movzx ebp,[rdi+s1]。code 段恢复被 hook 的原指令 movzx edx,word ptr [rdi+s1]"
-    },
-    {
-      "id": "infinite_oxygen",
-      "name": "无限氧气",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 11 8B ?? ?? 00 00 C6 83 ?? ?? 00 00 01 E9 ?? ?? 00 00",
-      "hook_size": 8,
-      "aob_vars": {
-        "s1": 4
-      },
-      "asm_code": "push rax\nlea rax,[rbx+{s1}]\nmovss xmm1,[rax+04]\nmovss [rax],xmm1\npop rax",
-      "group": "角色",
-      "hotkey": ""
-    },
-    {
-      "id": "infinite_tethers",
-      "name": "无限抓钩",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "48 83 C0 10 49 3B C0 75 ?? E8 ?? ?? ?? ?? 2B F8 85 FF",
-      "hook_size": 7,
-      "asm_code": "xor edi,edi\nadd rax,0x10\ncmp rax,r8\nnop",
-      "group": "抓钩装备",
-      "hotkey": "",
-      "note": "立即数必须写 0x10：原指令是 48 83 C0 10（add rax,imm8=0x10=16）。裸写 10 会被当十进制 10，抓钩数量计算错误。xor edi,edi 清零计数，add rax,0x10 + cmp rax,r8 恢复被 hook 的两条原指令，与风灵月影 aobhook 脚本一致"
-    },
-    {
-      "id": "unlock_all_gear_mods",
-      "name": "解锁所有装备改装",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "48 8B 06 80 78 ?? 00 74 ?? 48 8B ?? C6 ?? ?? ?? 00 00 01 48 8B ?? 80 ?? ?? 00 74 ?? 48 8B ?? 18 FF",
-      "hook_size": 7,
-      "aob_vars": {
-        "s1": 5
-      },
-      "asm_code": "push rbx\nmov rax,[rsi]\nlea rbx,[rax+{s1}]\nmov byte ptr [rbx],1\nmov byte ptr [rbx-01],1\ncmp byte ptr [rbx],00\npop rbx",
-      "group": "抓钩装备",
-      "hotkey": ""
-    },
-    {
-      "id": "easy_clear_heat",
-      "name": "快速清除热度",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 5C C4 0F 2F C3 F3 0F 11 ?? ?? ?? 00 00 77",
-      "hook_size": 7,
-      "asm_code": "xorps xmm0,xmm0\nsubss xmm0,xmm4\ncomiss xmm0,xmm3",
-      "group": "角色",
-      "hotkey": "",
-      "note": "风灵月影 Block #17 (aobheat)：原 7 字节 = subss xmm0,xmm4 (4) + comiss xmm0,xmm3 (3)。cave 清零 xmm0 后 subss（变 -xmm4）→ comiss 比 -xmm4 与 xmm3，相邻的 `F3 0F 11` (movss) 与 `77` (ja) 未被 hook，原样执行。末尾 comiss 恢复被 hook 的 comiss 指令"
-    },
-    {
-      "id": "freeze_mission_timer",
-      "name": "冻结任务计时器",
-      "type": "code_patch",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 5C F7 ?? ?? ?? E8 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 74",
-      "patch_offset": 0,
-      "patch_bytes": "0F 1F 40 00",
-      "group": "游戏系统",
-      "hotkey": ""
-    },
-    {
-      "id": "freeze_challenge_timer",
-      "name": "冻结挑战计时器",
-      "type": "code_patch",
-      "module": "JustCause3.exe",
-      "aob": "2B ?? 89 ?? ?? ?? 00 00 ?? 8B ?? ?? ?? 00 00 ?? 3B ?? ?? ?? 00 00 74",
-      "patch_offset": 0,
-      "patch_bytes": "66 90",
-      "group": "游戏系统",
-      "hotkey": ""
-    },
-    {
-      "id": "freeze_challenge_timer_2",
-      "name": "冻结挑战计时器(备用)",
-      "type": "code_patch",
-      "module": "JustCause3.exe",
-      "aob": "F3 0F 5C C7 0F 2F C6 77 03 0F 28 C6 F3 41 0F 11",
-      "patch_offset": 0,
-      "patch_bytes": "0F 1F 40 00",
-      "group": "游戏系统",
-      "hotkey": ""
-    },
-    {
-      "id": "freeze_challenge_timer_3",
-      "name": "冻结挑战计时器(变体3)",
-      "type": "code_patch",
-      "module": "JustCause3.exe",
-      "aob": "01 87 ?? ?? 00 00 8B 15 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? E8",
-      "patch_offset": 0,
-      "patch_bytes": "EB 04",
-      "group": "游戏系统",
-      "hotkey": "",
-      "note": "FLiNG aobchallengetimer_3（Block #24）：原指令 add dword ptr [rdi+disp32],eax（01 87 ?? ?? 00 00）每帧给挑战计时器累加；打 EB 04（jmp +4）跳过该 6 字节指令即冻结。仅补前 2 字节，短跳正好越过其余 4 字节。其余 freeze_challenge_timer(_2) 是另一处累加点的变体"
-    },
-    {
-      "id": "add_10k_challenge_score",
-      "name": "增加10K挑战分数",
-      "type": "code_inject",
-      "module": "JustCause3.exe",
-      "aob": "48 03 7B 18 48 8B 1B 49 3B 9C 24 ?? ?? 00 00 75",
-      "hook_size": 7,
-      "asm_code": "cmp dword ptr [score],1\njne code\nadd dword ptr [rbx+0x18],10000\nmov dword ptr [score],0\ncode:\nadd rdi,[rbx+0x18]\nmov rbx,[rbx]",
-      "group": "游戏系统",
-      "hotkey": "",
-      "note": "hook_size 必须是 7：jmp rel32 占 5 字节，hook_size 不能小于 5。覆盖 add rdi,[rbx+18](4B) + mov rbx,[rbx](3B) 两条指令，cave 的 code 段完整恢复这两条，与风灵月影 aobscore 脚本一致（原版同为 jmp+nop2=7 字节）"
-    }
-  ]
+﻿{
+    "mods":  [
+                 {
+                     "id":  "infinite_health",
+                     "name":  "无限生命",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "0F BF 82 ?? ?? 00 00 ?? 89 ?? 04 ?? 89 ?? 0C 66 0F 6E ?? 0F BF ?? ?? ?? 00 00",
+                     "hook_size":  7,
+                     "aob_vars":  {
+                                      "s1":  3,
+                                      "s2":  22
+                                  },
+                     "asm_code":  "mov [ptplayer],rdx\ncmp dword ptr [health],1\njne code\nmov ax,[rdx+{s2}]\nmov [rdx+{s1}],ax\ncode:\nmovsx eax,word ptr [rdx+{s1}]",
+                     "group":  "角色",
+                     "hotkey":  "D1",
+                     "note":  "与风灵月影 aobhealth 脚本一致：code 段用 movsx eax,word ptr [rdx+s1] 恢复被 hook 的原指令"
+                 },
+                 {
+                     "id":  "infinite_vehicle_health",
+                     "name":  "无限载具生命",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "48 83 B9 ?? ?? 00 00 00 0F 84 ?? ?? 00 00 80 B9 ?? ?? 00 00 00 0F 84 ?? ?? 00 00 ?? ?? ?? ?? 8B ?? ?? ?? 00 00",
+                     "hook_size":  8,
+                     "aob_vars":  {
+                                      "s1":  3
+                                  },
+                     "aob_refs":  {
+                                      "sr1":  {
+                                                  "aob":  "0F B7 ?? ?? ?? 00 00 48 8B ?? ?? ?? ?? 66 ?? ?? ?? ?? ?? FF 90",
+                                                  "index":  3
+                                              }
+                                  },
+                     "asm_code":  "push rbx\nmov rbx,[rcx+{s1}]\nmov [ptvehicle],rbx\ncmp dword ptr [vehicle_health],1\njne code\ntest rbx,rbx\nje code\nmov word ptr [rbx+{sr1}],9999\ncode:\ntest rbx,rbx\npop rbx",
+                     "group":  "载具",
+                     "hotkey":  "D2",
+                     "note":  "blood 偏移 sr1 来自第二个 AOB aobhpoffsetcheck（FLiNG 原版）：引擎扫描它并在偏移 2 处读 2 字节（ReadInt16）得到载具血量字段偏移，cave 写 [rbx+sr1]=#9999。aob_refs 缺失会直接 prepare 失败，不再退化写错字段（之前写 [rbx+0] 无效）。code 段 test rbx,rbx 恢复被 hook 的原指令 cmp qword ptr [rcx+disp32],0 的标志"
+                 },
+                 {
+                     "id":  "infinite_ammo",
+                     "name":  "无限弹药",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "41 83 BC 24 ?? ?? 00 00 04 0F 87 ?? ?? ?? ?? 48 8B 4E 60 48 81 C1 ?? ?? 00 00 41 8B 9C 24 ?? ?? 00 00",
+                     "hook_size":  9,
+                     "aob_vars":  {
+                                      "s1":  4,
+                                      "s2":  22
+                                  },
+                     "asm_code":  "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+60]\nadd rcx,{s2}\nmov edx,[r12+{s1}]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [r12+{s1}+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
+                     "flags":  [
+                                   "ammo",
+                                   "reload"
+                               ],
+                     "flag":  "ammo",
+                     "group":  "武器",
+                     "hotkey":  "D3",
+                     "note":  "v2.9 单 hook 多 flag：本 mod 是 hook_owner，cave 内含 ammo/reload 两个分支，各自用命名 flag [ammo]/[reload] 门控（flag 槽位在共享变量区，由 ResolveAsmVars 解析）。no_reload 通过 hook_owner 复用本 hook，仅把 reload flag 置 1，两者可同时开启。code 段末尾 cmp dword ptr [rax],04 恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4（其后 0F 87 ja 依赖该标志）。v2.11 修复（重要）：`cmp dword ptr [ammo],1` / `[reload],1` 这类绝对地址比较由 AsmHelper 编成两步式 `mov rax,imm64; cmp [rax],imm`，**会破坏 rax**——原写法中 `mov edx,[rax]` 与末尾 `cmp [rax],04` 读到的都是 ammo/reload 的槽位地址而非 [r12+s1]，导致恢复原指令时标志位错误、游戏后续 ja 跑飞而崩溃。现改为弹药表索引与 reload 写入直接用 [r12+{s1}] 寻址，末尾重新 lea rax 后再恢复原指令，不再依赖 rax 跨 cmp 存活。v2.10 修复：ammo 分支不再直接写 999 到 [rax]，改为与风灵月影一致——从 [rsi+60]+s2 构建弹药表基址 rcx，读 [r12+s1] 作为武器索引 edx，从备用弹药表 [rcx+rdx*4+0x1F0] 读真实弹药量 ebx，写入当前弹药表 [rcx+rdx*4+0x1B0]。直接写 999 破坏了游戏内部弹药数据结构一致性，导致游戏崩溃"
+                 },
+                 {
+                     "id":  "no_reload",
+                     "name":  "无需换弹",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "41 83 BC 24 ?? ?? 00 00 04 0F 87 ?? ?? ?? ?? 48 8B 4E 60 48 81 C1 ?? ?? 00 00 41 8B 9C 24 ?? ?? 00 00",
+                     "hook_size":  9,
+                     "aob_vars":  {
+                                      "s1":  4,
+                                      "s2":  22
+                                  },
+                     "asm_code":  "push rax\nlea rax,[r12+{s1}]\nmov dword ptr [rax+04],99\ncmp dword ptr [rax],04\npop rax",
+                     "hook_owner":  "infinite_ammo",
+                     "flag":  "reload",
+                     "group":  "武器",
+                     "hotkey":  "D4",
+                     "note":  "v2.9 从属 mod：复用 infinite_ammo 的 hook（hook_owner），仅把 reload flag 置 1，由共享 cave 的 reload 分支执行 [rax+04]=99。本 mod 的 asm_code 运行时不会被汇编（从属 mod 走 flag 路径），保留仅作文档与 asm-verify 参考。两者可同时开启，UI 互斥已解除"
+                 },
+                 {
+                     "id":  "infinite_grenades",
+                     "name":  "无限手雷",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "8B 97 ?? ?? 00 00 E8 ?? ?? ?? ?? 85 C0 74 ?? ?? ?? ?? 30 32",
+                     "hook_size":  6,
+                     "aob_vars":  {
+                                      "s1":  2
+                                  },
+                     "asm_code":  "mov edx,[rdi+{s1}]\nmov dword ptr [rcx+rdx*4+0x1B0],9\nnop",
+                     "group":  "武器",
+                     "hotkey":  "D5",
+                     "note":  "与风灵月影 aobgrenades 一致：mov edx,[rdi+s1] 即恢复被 hook 的原指令"
+                 },
+                 {
+                     "id":  "super_accuracy",
+                     "name":  "超级精准",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 11 8F ?? ?? 00 00 0F 28 ?? F3 ?? 0F 59",
+                     "hook_size":  8,
+                     "aob_vars":  {
+                                      "s1":  4
+                                  },
+                     "asm_code":  "xorps xmm1,xmm1\nmovss [rdi+{s1}],xmm1\nnop\nnop\nnop",
+                     "group":  "武器",
+                     "hotkey":  "D6"
+                 },
+                 {
+                     "id":  "no_recoil",
+                     "name":  "无后坐力",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 11 87 ?? ?? 00 00 48 8B 87 ?? ?? 00 00 48 2B ?? ?? ?? 00 00 48 C1 ?? 03 83 ?? 01 76 ?? 80 ?? ?? ?? 00 00 00 74",
+                     "base_offset":  8,
+                     "hook_size":  7,
+                     "aob_vars":  {
+                                      "s1":  4,
+                                      "s2":  11
+                                  },
+                     "asm_code":  "lea rax,[rdi+{s1}]\nmov dword ptr [rax-08],0\nmov dword ptr [rax],0\nmov dword ptr [rax+04],0\nmov rax,[rdi+{s2}]",
+                     "group":  "武器",
+                     "hotkey":  "D7",
+                     "note":  "hook 点必须是 AOB+8（不是 +0），风灵月影写作 aobrecoil+08。+0 处是 movss [rdi+s1],xmm0（8字节）不应被覆盖；+8 处才是 mov rax,[rdi+s2]（7字节），cave 末尾的 mov rax,[rdi+s2] 即为恢复。s2 偏移此前误写为 14，AOB 索引 11 才是 s2"
+                 },
+                 {
+                     "id":  "rapid_fire",
+                     "name":  "快速射击",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 10 87 ?? ?? 00 00 0F 2F ?? 72 ?? 48 ?? ?? 44",
+                     "hook_size":  8,
+                     "aob_vars":  {
+                                      "s1":  4
+                                  },
+                     "asm_code":  "push rax\nmov rax,[ptgun]\ncmp rax,rdi\njne code\nmov dword ptr [rdi+{s1}],0x4479C000\ncode:\nmovss xmm0,[rdi+{s1}]\npop rax",
+                     "group":  "武器",
+                     "hotkey":  "D8",
+                     "note":  "0x4479C000 = (float)999，与风灵月影 mov [rdi+s1],(float)999 一致。末尾 movss xmm0,[rdi+s1] 恢复被 hook 的原指令。原版还有 cmp [rapid_fire],1 开关检查，本引擎以 flag 变量恒为 1 等效"
+                 },
+                 {
+                     "id":  "one_hit_kills",
+                     "name":  "一击必杀",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "0F B7 97 ?? ?? 00 00 48 8B ?? ?? ?? ?? 66 2B D5 ?? ?? ?? FF 90",
+                     "hook_size":  7,
+                     "aob_vars":  {
+                                      "s1":  3
+                                  },
+                     "asm_code":  "mov rdx,[ptplayer]\ncmp rdx,rdi\njne notplayer\ncmp dword ptr [health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nnotplayer:\nmov rdx,[ptvehicle]\ncmp rdx,rdi\njne isenemy\ncmp dword ptr [vehicle_health],1\njne code\ncmp bp,0\njle code\nxor ebp,ebp\njmp code\nisenemy:\ncmp dword ptr [ohk],1\njne code\ncmp bp,0\njle code\nmovzx ebp,word ptr [rdi+{s1}]\ncode:\nmovzx edx,word ptr [rdi+{s1}]",
+                     "group":  "角色",
+                     "hotkey":  "D9",
+                     "note":  "AOB 必须用风灵脚本块#7（66 2B D5，2B/3B 编码方向），不能用#6（66 29 EA，29/39 方向）：同一编译器对整套二进制使用一致的操作数方向编码，本机无限抓钩命中的是 49 3B C0/2B F8（2B/3B 方向），故一击必杀也必为 66 2B D5 版本，#6 永远扫不到。按风灵月影 aobohk 完整复现三分支：①rdi==ptplayer 且 health=1 → xor ebp,ebp（伤害清零）②rdi==ptvehicle 且 vehicle_health=1 → 同上 ③其他对象（敌人）且 ohk=1 → movzx ebp,[rdi+s1]。code 段恢复被 hook 的原指令 movzx edx,word ptr [rdi+s1]"
+                 },
+                 {
+                     "id":  "infinite_oxygen",
+                     "name":  "无限氧气",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 11 8B ?? ?? 00 00 C6 83 ?? ?? 00 00 01 E9 ?? ?? 00 00",
+                     "hook_size":  8,
+                     "aob_vars":  {
+                                      "s1":  4
+                                  },
+                     "asm_code":  "push rax\nlea rax,[rbx+{s1}]\nmovss xmm1,[rax+04]\nmovss [rax],xmm1\npop rax",
+                     "group":  "角色",
+                     "hotkey":  "D0"
+                 },
+                 {
+                     "id":  "infinite_tethers",
+                     "name":  "无限抓钩",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "48 83 C0 10 49 3B C0 75 ?? E8 ?? ?? ?? ?? 2B F8 85 FF",
+                     "hook_size":  7,
+                     "asm_code":  "xor edi,edi\nadd rax,0x10\ncmp rax,r8\nnop",
+                     "group":  "抓钩装备",
+                     "hotkey":  "F1",
+                     "note":  "立即数必须写 0x10：原指令是 48 83 C0 10（add rax,imm8=0x10=16）。裸写 10 会被当十进制 10，抓钩数量计算错误。xor edi,edi 清零计数，add rax,0x10 + cmp rax,r8 恢复被 hook 的两条原指令，与风灵月影 aobhook 脚本一致"
+                 },
+                 {
+                     "id":  "unlock_all_gear_mods",
+                     "name":  "解锁所有装备改装",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "48 8B 06 80 78 ?? 00 74 ?? 48 8B ?? C6 ?? ?? ?? 00 00 01 48 8B ?? 80 ?? ?? 00 74 ?? 48 8B ?? 18 FF",
+                     "hook_size":  7,
+                     "aob_vars":  {
+                                      "s1":  5
+                                  },
+                     "asm_code":  "push rbx\nmov rax,[rsi]\nlea rbx,[rax+{s1}]\nmov byte ptr [rbx],1\nmov byte ptr [rbx-01],1\ncmp byte ptr [rbx],00\npop rbx",
+                     "group":  "抓钩装备",
+                     "hotkey":  "F2"
+                 },
+                 {
+                     "id":  "easy_clear_heat",
+                     "name":  "快速清除热度",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 5C C4 0F 2F C3 F3 0F 11 ?? ?? ?? 00 00 77",
+                     "hook_size":  7,
+                     "asm_code":  "xorps xmm0,xmm0\nsubss xmm0,xmm4\ncomiss xmm0,xmm3",
+                     "group":  "角色",
+                     "hotkey":  "F3",
+                     "note":  "风灵月影 Block #17 (aobheat)：原 7 字节 = subss xmm0,xmm4 (4) + comiss xmm0,xmm3 (3)。cave 清零 xmm0 后 subss（变 -xmm4）→ comiss 比 -xmm4 与 xmm3，相邻的 `F3 0F 11` (movss) 与 `77` (ja) 未被 hook，原样执行。末尾 comiss 恢复被 hook 的 comiss 指令"
+                 },
+                 {
+                     "id":  "freeze_mission_timer",
+                     "name":  "冻结任务计时器",
+                     "type":  "code_patch",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 5C F7 ?? ?? ?? E8 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 C0 74",
+                     "patch_offset":  0,
+                     "patch_bytes":  "0F 1F 40 00",
+                     "group":  "游戏系统",
+                     "hotkey":  "F4"
+                 },
+                 {
+                     "id":  "freeze_challenge_timer",
+                     "name":  "冻结挑战计时器",
+                     "type":  "code_patch",
+                     "module":  "JustCause3.exe",
+                     "aob":  "2B ?? 89 ?? ?? ?? 00 00 ?? 8B ?? ?? ?? 00 00 ?? 3B ?? ?? ?? 00 00 74",
+                     "patch_offset":  0,
+                     "patch_bytes":  "66 90",
+                     "group":  "游戏系统",
+                     "hotkey":  "F5"
+                 },
+                 {
+                     "id":  "freeze_challenge_timer_2",
+                     "name":  "冻结挑战计时器(备用)",
+                     "type":  "code_patch",
+                     "module":  "JustCause3.exe",
+                     "aob":  "F3 0F 5C C7 0F 2F C6 77 03 0F 28 C6 F3 41 0F 11",
+                     "patch_offset":  0,
+                     "patch_bytes":  "0F 1F 40 00",
+                     "group":  "游戏系统",
+                     "hotkey":  ""
+                 },
+                 {
+                     "id":  "freeze_challenge_timer_3",
+                     "name":  "冻结挑战计时器(变体3)",
+                     "type":  "code_patch",
+                     "module":  "JustCause3.exe",
+                     "aob":  "01 87 ?? ?? 00 00 8B 15 ?? ?? ?? ?? 48 8B 0D ?? ?? ?? ?? E8",
+                     "patch_offset":  0,
+                     "patch_bytes":  "EB 04",
+                     "group":  "游戏系统",
+                     "hotkey":  "",
+                     "note":  "FLiNG aobchallengetimer_3（Block #24）：原指令 add dword ptr [rdi+disp32],eax（01 87 ?? ?? 00 00）每帧给挑战计时器累加；打 EB 04（jmp +4）跳过该 6 字节指令即冻结。仅补前 2 字节，短跳正好越过其余 4 字节。其余 freeze_challenge_timer(_2) 是另一处累加点的变体"
+                 },
+                 {
+                     "id":  "add_10k_challenge_score",
+                     "name":  "增加10K挑战分数",
+                     "type":  "code_inject",
+                     "module":  "JustCause3.exe",
+                     "aob":  "48 03 7B 18 48 8B 1B 49 3B 9C 24 ?? ?? 00 00 75",
+                     "hook_size":  7,
+                     "asm_code":  "cmp dword ptr [score],1\njne code\nadd dword ptr [rbx+0x18],10000\nmov dword ptr [score],0\ncode:\nadd rdi,[rbx+0x18]\nmov rbx,[rbx]",
+                     "group":  "游戏系统",
+                     "hotkey":  "F6",
+                     "note":  "hook_size 必须是 7：jmp rel32 占 5 字节，hook_size 不能小于 5。覆盖 add rdi,[rbx+18](4B) + mov rbx,[rbx](3B) 两条指令，cave 的 code 段完整恢复这两条，与风灵月影 aobscore 脚本一致（原版同为 jmp+nop2=7 字节）"
+                 }
+             ]
 }
