@@ -383,8 +383,8 @@ python scripts/plugins-validate.py --strict
 
 | 插件 | 版本 | 引擎 | 功能数 | sgdb_game_id |
 |---|---|---|---|---|
-| ra2_yr（红色警戒2：尤里的复仇） | 1.1.1 | ra2_pipe (legacy_label) | 31 | 38629 |
-| just_cause_3（正当防卫3） | 1.1.2 | jc3_injected (data_driven) | 16 | 2403 |
+| ra2_yr（红色警戒2：尤里的复仇） | 1.1.1 | ra2_pipe (legacy_label) | 32 | 38629 |
+| just_cause_3（正当防卫3） | 1.1.3 | jc3_injected (data_driven) | 18 | 2403 |
 
 ---
 
