@@ -48,7 +48,7 @@
                                       "s1":  4,
                                       "s2":  22
                                   },
-                     "asm_code":  "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+60]\nadd rcx,{s2}\nmov edx,[r12+{s1}]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [r12+{s1}+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
+                     "asm_code":  "push rax\npush rbx\npush rcx\npush rdx\nmov [ptgun],r12\nlea rax,[r12+{s1}]\ncmp dword ptr [ammo],1\njne ammo_skip\nmov rcx,[rsi+0x60]\nadd rcx,{s2}\nmov edx,[r12+{s1}]\nmov ebx,[rcx+rdx*4+0x1F0]\nmov [rcx+rdx*4+0x1B0],ebx\nammo_skip:\ncmp dword ptr [reload],1\njne reload_skip\nmov dword ptr [r12+{s1}+04],99\nreload_skip:\nlea rax,[r12+{s1}]\ncmp dword ptr [rax],04\npop rdx\npop rcx\npop rbx\npop rax",
                      "flags":  [
                                    "ammo",
                                    "reload"
@@ -56,7 +56,7 @@
                      "flag":  "ammo",
                      "group":  "武器",
                      "hotkey":  "D3",
-                     "note":  "v2.9 单 hook 多 flag：本 mod 是 hook_owner，cave 内含 ammo/reload 两个分支，各自用命名 flag [ammo]/[reload] 门控（flag 槽位在共享变量区，由 ResolveAsmVars 解析）。no_reload 通过 hook_owner 复用本 hook，仅把 reload flag 置 1，两者可同时开启。code 段末尾 cmp dword ptr [rax],04 恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4（其后 0F 87 ja 依赖该标志）。v2.11 修复（重要）：`cmp dword ptr [ammo],1` / `[reload],1` 这类绝对地址比较由 AsmHelper 编成两步式 `mov rax,imm64; cmp [rax],imm`，**会破坏 rax**——原写法中 `mov edx,[rax]` 与末尾 `cmp [rax],04` 读到的都是 ammo/reload 的槽位地址而非 [r12+s1]，导致恢复原指令时标志位错误、游戏后续 ja 跑飞而崩溃。现改为弹药表索引与 reload 写入直接用 [r12+{s1}] 寻址，末尾重新 lea rax 后再恢复原指令，不再依赖 rax 跨 cmp 存活。v2.10 修复：ammo 分支不再直接写 999 到 [rax]，改为与风灵月影一致——从 [rsi+60]+s2 构建弹药表基址 rcx，读 [r12+s1] 作为武器索引 edx，从备用弹药表 [rcx+rdx*4+0x1F0] 读真实弹药量 ebx，写入当前弹药表 [rcx+rdx*4+0x1B0]。直接写 999 破坏了游戏内部弹药数据结构一致性，导致游戏崩溃"
+                     "note":  "v2.9 单 hook 多 flag：本 mod 是 hook_owner，cave 内含 ammo/reload 两个分支，各自用命名 flag [ammo]/[reload] 门控（flag 槽位在共享变量区，由 ResolveAsmVars 解析）。no_reload 通过 hook_owner 复用本 hook，仅把 reload flag 置 1，两者可同时开启。code 段末尾 cmp dword ptr [rax],04 恢复被 hook 的原指令 cmp dword ptr [r12+disp32],4（其后 0F 87 ja 依赖该标志）。v2.11 修复（重要）：`cmp dword ptr [ammo],1` / `[reload],1` 这类绝对地址比较由 AsmHelper 编成两步式 `mov rax,imm64; cmp [rax],imm`，**会破坏 rax**——原写法中 `mov edx,[rax]` 与末尾 `cmp [rax],04` 读到的都是 ammo/reload 的槽位地址而非 [r12+s1]，导致恢复原指令时标志位错误、游戏后续 ja 跑飞而崩溃。现改为弹药表索引与 reload 写入直接用 [r12+{s1}] 寻址，末尾重新 lea rax 后再恢复原指令，不再依赖 rax 跨 cmp 存活。v2.10 修复：ammo 分支不再直接写 999 到 [rax]，改为与风灵月影一致——从 [rsi+0x60]+s2 构建弹药表基址 rcx，读 [r12+s1] 作为武器索引 edx，从备用弹药表 [rcx+rdx*4+0x1F0] 读真实弹药量 ebx，写入当前弹药表 [rcx+rdx*4+0x1B0]。直接写 999 破坏了游戏内部弹药数据结构一致性，导致游戏崩溃"
                  },
                  {
                      "id":  "no_reload",

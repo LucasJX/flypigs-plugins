@@ -4,7 +4,7 @@
     "process":  "JustCause3.exe",
     "engine":  "injected_pipe",
     "engine_dll":  "flypigs_just_cause_3_engine.dll",
-    "version":  "1.1.3",
+    "version":  "1.1.4",
     "flag_vars":  [
                       "health",
                       "vehicle_health",
