@@ -1,6 +1,6 @@
 ﻿{
     "schema_version":  2,
-    "updated_at":  "2026-09-06T14:20:12Z",
+    "updated_at":  "2026-09-07T02:29:27Z",
     "market_base":  "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
     "plugins":  [
                     {
@@ -28,7 +28,7 @@
                                        "阵营保护"
                                    ],
                         "features_count":  31,
-                        "updated_at":  "2026-08-26T11:55:00Z",
+                        "updated_at":  "2026-09-07T02:29:27Z",
                         "sgdb_game_id":  38629
                     },
                     {
@@ -38,13 +38,13 @@
                         "process":  "JustCause3.exe",
                         "engine":  "jc3_injected",
                         "engine_min":  "1.0.0",
-                        "version":  "1.1.6",
+                        "version":  "1.1.7",
                         "author":  "Flypigs (功能参考风灵月影)",
                         "description":  "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
                         "icon":  null,
-                        "download":  "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.6.zip",
-                        "sha256":  "f9a4c355d3d8e19d92eff9c015493db6bbdce805930fa7fb8c5cda9c294f6352",
-                        "size":  1079067,
+                        "download":  "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.7.zip",
+                        "sha256":  "649b6f37bc04502a52c142ec4f717d11a5b725dc12f71a457fcbd3a6a2cd4ef2",
+                        "size":  1079066,
                         "min_app":  "1.0.0",
                         "groups":  [
                                        "角色",
@@ -54,7 +54,7 @@
                                        "游戏系统"
                                    ],
                         "features_count":  17,
-                        "updated_at":  "2026-09-06T14:20:12Z",
+                        "updated_at":  "2026-09-07T02:29:27Z",
                         "sgdb_game_id":  2403
                     }
                 ]

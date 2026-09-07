@@ -1,4 +1,4 @@
-{
+﻿{
   "mods": [
     {
       "id": "infinite_health",
@@ -63,7 +63,7 @@
       "name": "无限手雷",
       "type": "code_inject",
       "module": "JustCause3.exe",
-      "aob": "8B 97 ?? ?? 00 00 E8 ?? ?? ?? ?? 85 C0 74 ?? ?? ?? 30 32",
+      "aob": "8B 97 ?? ?? 00 00 E8 ?? ?? ?? ?? 85 C0 74 ?? 32",
       "hook_size": 6,
       "aob_vars": {
         "s1": 2

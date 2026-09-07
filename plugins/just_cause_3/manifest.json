@@ -4,7 +4,7 @@
   "process": "JustCause3.exe",
   "engine": "injected_pipe",
   "engine_dll": "flypigs_just_cause_3_engine.dll",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "flag_vars": ["health", "vehicle_health", "score", "ohk"],
   "engine_min": "1.0.0",
   "author": "Flypigs (功能参考风灵月影 Plus 17 Trainer)",
