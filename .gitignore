@@ -1,0 +1,6 @@
+# AUD-048：插件仓仓库卫生
+# 只解决已确认的临时文件/编辑器残留，不忽略发布 zip / 数据文件。
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
