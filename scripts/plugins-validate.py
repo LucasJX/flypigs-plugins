@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """plugins-validate.py — flypigs-plugins 仓校验脚本（Plugin Spec v1.0）
 
 校验项：
@@ -34,11 +34,17 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+# AUD-026-B：规则单一真源。两 validator 共用 schema.py，禁止各自维护规则副本。
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+import schema
+
 # --- 常量 ---
 
-VALID_FN_KIND = {"button", "checkbox", "slider", "input", "select", "multi_select", "protected_list"}
-# 这些 kind 走「列表/特殊协议」，不需要单个 fn_label
-LABEL_OPT_OUT_KIND = {"button", "protected_list"}
+# AUD-026-B：fn_kind 集合与 fn_label 豁免规则由 schema.py 提供（单一真源）。
+VALID_FN_KIND = schema.VALID_FN_KIND
+LABEL_OPT_OUT_KIND = schema.LABEL_OPT_OUT_KIND
 PATH_SAFE = re.compile(r"^([A-Za-z0-9_./-]+)$")
 
 RED = "\033[31m"
@@ -172,12 +178,12 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             fkind = ft.get("fn_kind") or ft.get("type")
             if fkind not in VALID_FN_KIND:
                 res.add_warning(where, f"feature {fid!r} fn_kind={fkind!r} 不在 {sorted(VALID_FN_KIND)}")
-            # fn_label 只在「注入式引擎」(如 ra2_pipe) 必需；纯数据引擎 (memory 等) 不需要
-            # 判定：manifest.engine 以 *_pipe 结尾（含 ra2_pipe / pipe_x / ...）一律视为注入式
+            # fn_label 只在 legacy_label 能力类（ra2_pipe / legacy_label）必需（AUD-026-B）。
+            # 判定用 schema 能力类而非 engine 字符串后缀：旧 endswith('_pipe') 会把
+            # data_driven 的 injected_pipe 误判为注入式（JC3 曾被误报 12 个假错误）。
             engine = mf.get("engine", "") or ""
-            is_pipe_engine = engine.endswith("_pipe")
-            if is_pipe_engine and fkind not in LABEL_OPT_OUT_KIND and not ft.get("fn_label"):
-                res.add_error(where, f"feature {fid!r} (kind={fkind}, engine={engine}) 缺 fn_label — 注入式引擎必需")
+            if schema.fn_label_required(fkind, engine) and not ft.get("fn_label"):
+                res.add_error(where, f"feature {fid!r} (kind={fkind}, engine={engine}) 缺 fn_label — legacy_label 引擎必需")
             # group 命中检查留给 memory.mods（manifest.features 是 UI 描述，不要求 group）
 
     # --- memory.json（可选） ---
@@ -216,10 +222,7 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
         res.add_error(where, "manifest.features_count 必填（Plugin Spec v1.0）")
     else:
         # 主 mod 集合：去掉 _2/_alt/_备用 后缀的备用 mod
-        main_features_count = sum(
-            1 for f in features_list if isinstance(f, dict) and f.get("id")
-            and not any(f.get("id", "").endswith(suf) for suf in ("_2", "_alt", "_备用"))
-        )
+        main_features_count = schema.expected_features_count(features_list)
         if isinstance(features_count, int) and features_count != main_features_count:
             res.add_error(where,
                 f"manifest.features_count={features_count} 应等于主功能数 {main_features_count}（去除备用 _2/_alt/_备用）")

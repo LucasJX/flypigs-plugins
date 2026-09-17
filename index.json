@@ -1,61 +1,61 @@
-﻿{
-    "schema_version":  2,
-    "updated_at":  "2026-09-07T02:29:27Z",
-    "market_base":  "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
-    "plugins":  [
-                    {
-                        "id":  "ra2_yr",
-                        "name":  "红色警戒2：尤里的复仇 (RA2 YR)",
-                        "game":  "RA2 YR",
-                        "process":  "gamemd.exe",
-                        "engine":  "ra2_pipe",
-                        "engine_min":  "1.0.0",
-                        "version":  "1.1.1",
-                        "author":  "Flypigs",
-                        "description":  "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，31 项主功能 + 1 项阵营保护专用 mod。",
-                        "icon":  null,
-                        "download":  "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/ra2_yr/ra2_yr-1.1.1.zip",
-                        "sha256":  "d8aa158e2a882f4ec1d60ab05a58c560f60ddf9b0e1d78cf7f6f131385b31953",
-                        "size":  4019,
-                        "min_app":  "1.0.0",
-                        "groups":  [
-                                       "经济",
-                                       "战斗增益",
-                                       "建造",
-                                       "单位操作",
-                                       "战场控制",
-                                       "任务调速",
-                                       "阵营保护"
-                                   ],
-                        "features_count":  31,
-                        "updated_at":  "2026-09-07T02:29:27Z",
-                        "sgdb_game_id":  38629
-                    },
-                    {
-                        "id":  "just_cause_3",
-                        "name":  "正当防卫3 (Just Cause 3)",
-                        "game":  "JC3",
-                        "process":  "JustCause3.exe",
-                        "engine":  "jc3_injected",
-                        "engine_min":  "1.0.0",
-                        "version":  "1.1.7",
-                        "author":  "Flypigs (功能参考风灵月影)",
-                        "description":  "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
-                        "icon":  null,
-                        "download":  "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.7.zip",
-                        "sha256":  "649b6f37bc04502a52c142ec4f717d11a5b725dc12f71a457fcbd3a6a2cd4ef2",
-                        "size":  1079066,
-                        "min_app":  "1.0.0",
-                        "groups":  [
-                                       "角色",
-                                       "武器",
-                                       "载具",
-                                       "抓钩装备",
-                                       "游戏系统"
-                                   ],
-                        "features_count":  17,
-                        "updated_at":  "2026-09-07T02:29:27Z",
-                        "sgdb_game_id":  2403
-                    }
-                ]
+{
+  "schema_version": 2,
+  "updated_at": "2026-09-07T02:29:27Z",
+  "market_base": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
+  "plugins": [
+    {
+      "id": "ra2_yr",
+      "name": "红色警戒2：尤里的复仇 (RA2 YR)",
+      "game": "RA2 YR",
+      "process": "gamemd.exe",
+      "engine": "ra2_pipe",
+      "engine_min": "1.0.0",
+      "version": "1.1.1",
+      "author": "Flypigs",
+      "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，31 项主功能 + 1 项阵营保护专用 mod。",
+      "icon": null,
+      "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/ra2_yr/ra2_yr-1.1.1.zip",
+      "sha256": "d8aa158e2a882f4ec1d60ab05a58c560f60ddf9b0e1d78cf7f6f131385b31953",
+      "size": 4019,
+      "min_app": "1.0.0",
+      "groups": [
+        "经济",
+        "战斗增益",
+        "建造",
+        "单位操作",
+        "战场控制",
+        "任务调速",
+        "阵营保护"
+      ],
+      "features_count": 31,
+      "updated_at": "2026-09-07T02:29:27Z",
+      "sgdb_game_id": 38629
+    },
+    {
+      "id": "just_cause_3",
+      "name": "正当防卫3 (Just Cause 3)",
+      "game": "JC3",
+      "process": "JustCause3.exe",
+      "engine": "jc3_injected",
+      "engine_min": "1.0.0",
+      "version": "1.1.7",
+      "author": "Flypigs (功能参考风灵月影)",
+      "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
+      "icon": null,
+      "download": "https://api.github.com/repos/LucasJX/flypigs-plugins/contents/plugins/just_cause_3/just_cause_3-1.1.7.zip",
+      "sha256": "c57d874c79d86b373882811a11a72cd148f525f7acfd348d6a531535dc5cfb10",
+      "size": 1036521,
+      "min_app": "1.0.0",
+      "groups": [
+        "角色",
+        "武器",
+        "载具",
+        "抓钩装备",
+        "游戏系统"
+      ],
+      "features_count": 17,
+      "updated_at": "2026-09-07T02:29:27Z",
+      "sgdb_game_id": 2403
+    }
+  ]
 }

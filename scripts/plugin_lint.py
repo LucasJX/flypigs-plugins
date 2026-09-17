@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """plugin_lint.py — 插件 memory.json 语义校验（Plugin Spec v2.0）
 
@@ -46,6 +46,12 @@ import json
 import sys
 from pathlib import Path
 
+# AUD-026-B：规则单一真源。两 validator 共用 schema.py，禁止各自维护规则副本。
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+import schema
+
 RED = "\033[31m"
 YELLOW = "\033[33m"
 GREEN = "\033[32m"
@@ -60,27 +66,9 @@ KNOWN_FLAG_VARS = {
 CODE_TYPES = ("code_inject", "code_patch")
 ALU_OPS = ("mov", "add", "sub", "and", "or", "xor", "cmp")
 
-# 引擎能力 → 是否数据驱动校验
-# 镜像主仓 EngineRegistry：
-#   data_driven 集合：external_memory（含别名 memory）+ injected_pipe（含别名 jc3_injected/generic_injected）
-#   legacy_label：RA2 专用 fn_label 协议，跳 AOB/asm 但跑 fn_label 校验
-#   未知 engine：报错拒绝（与主仓 EngineRegistry.Resolve() 行为一致）
-_ENGINE_ALIASES = {
-    "external_memory": "data_driven",
-    "memory": "data_driven",
-    "injected_pipe": "data_driven",
-    "jc3_injected": "data_driven",
-    "generic_injected": "data_driven",
-    "legacy_label": "legacy_label",
-    "ra2_pipe": "legacy_label",
-}
-
-
+# AUD-026-B：引擎能力表与 fn_label / fn_kind 规则统一由 schema.py 提供（单一真源）。
 def _resolve_engine_class(engine: str) -> str | None:
-    """解析 engine 字段，返回能力类别（data_driven / legacy_label / None=未知）。"""
-    if not engine:
-        return None
-    return _ENGINE_ALIASES.get(engine)
+    return schema.resolve_engine_class(engine)
 
 
 # --------------------------------------------------------------------------
@@ -354,6 +342,8 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
     # P2-22 合规红线（不依赖 engine）：manifest 任何字段踩红线直接拒。
     if isinstance(manifest, dict):
         _lint_compliance(manifest, pid, errors, warnings)
+        # AUD-026-B：features_count 单一规则（与 plugins-validate 同源）。
+        _lint_features_count(manifest, pid, errors, warnings)
     # P2-15 跨 provider 拒绝（不依赖 engine 解析）：mod.engine 必须与 manifest.engine 同能力类。
     _lint_cross_provider(mods, engine, errors, warnings)
 
@@ -367,7 +357,7 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
         # 不 return，继续走 lint（按 data_driven 默认走校验）
     # P2-20 fn_label 校验（仅 legacy_label 引擎有意义）：fn_label 必须是 model.h::FnLabel 合法字串。
     if klass == "legacy_label":
-        _lint_fn_labels(mods, errors, warnings)
+        _lint_fn_labels(mods, engine, errors, warnings)
     data_driven = klass == "data_driven"
     if not data_driven:
         warnings.append(
@@ -399,24 +389,7 @@ def lint_memory(mem: dict, pid: str, raw_bytes: bytes | None = None,
 # P2-22 合规红线 / P2-15 跨 provider / P2-20 fn_label 校验
 # 镜像 src/engines/ra2_yr/src/protocol/model.h::FnLabel 与 EngineRegistry 能力表。
 # --------------------------------------------------------------------------
-# P2-20：fn_label 合法集合。来源：model.h::FnLabel，去除 kInvalid / kCount 元数据。
-_VALID_FN_LABELS = frozenset({
-    # Button
-    "Apply", "IAMWinner", "DeleteUnit", "ClearShroud", "GiveMeABomb",
-    "UnitLevelUp", "UnitSpeedUp", "FastBuild", "ThisIsMine",
-    # Checkbox
-    "God", "InstBuild", "UnlimitSuperWeapon", "InstFire", "InstTurn",
-    "RangeToYourBase", "FireToYourBase", "FreezeGapGenerator",
-    "SellTheWorld", "BuildEveryWhere", "AutoRepair", "SocialismMajesty",
-    "MakeCapturedMine", "MakeGarrisonedMine", "InvadeMode", "UnlimitTech",
-    "UnlimitFirePower", "InstChrono", "SpySpy", "SelectEnemy", "PauseGame",
-    # Slider
-    "AdjustGameSpeed",
-})
-# P2-20：fn_kind 取值集合（前端 UI 渲染依据）。注："protected_list" 是 RA2 引擎
-# 阵营保护列表事件的专用类型（model.h::MakeProtectedListEvent），fn_label 字段对它为
-# 空字串（label = kInvalid），是合法状态，不应误报。
-_VALID_FN_KINDS = frozenset({"button", "checkbox", "slider", "input", "protected_list"})
+# AUD-026-B：fn_label 枚举与 fn_kind 集合由 schema.py 提供（含 select/multi_select，7 种）。
 # P2-22 合规红线：禁止的 manifest 字段 / 取值。
 _FORBIDDEN_MANIFEST_FIELDS = frozenset({
     "online",            # 单机离线承诺；任何联网字段直接拒
@@ -450,6 +423,25 @@ def _lint_compliance(manifest: dict, pid: str, errors: list, warnings: list) -> 
                 f"（字段名包含 online/server/cloud）")
 
 
+def _lint_features_count(manifest: dict, pid: str, errors: list, warnings: list) -> None:
+    """AUD-026-B：manifest.features_count == 主功能数（去备用后缀 _2/_alt/_备用）。"""
+    features = manifest.get("features")
+    if features is None:
+        return  # features 缺失由 plugins-validate 的必填检查负责，这里不重复
+    fc = manifest.get("features_count")
+    if fc is None:
+        errors.append(f"{pid}: manifest.features_count 必填（Plugin Spec v1.0，等于主功能数）")
+    elif not isinstance(fc, int):
+        errors.append(f"{pid}: manifest.features_count 必须是整数，当前 {fc!r}")
+    else:
+        exp = schema.expected_features_count(features)
+        if fc != exp:
+            errors.append(
+                f"{pid}: manifest.features_count={fc} 应等于主功能数 {exp}"
+                f"（去除备用 _2/_alt/_备用 后缀的 feature）"
+                f"，见 scripts/schema.py")
+
+
 def _lint_cross_provider(mods: list, manifest_engine: str, errors: list, warnings: list) -> None:
     """跨能力类提示（自用场景）。
 
@@ -479,7 +471,7 @@ def _lint_cross_provider(mods: list, manifest_engine: str, errors: list, warning
                 f"属于不同能力类（跨 provider，会被加载器默默丢掉或交给错的汇编器处理）")
 
 
-def _lint_fn_labels(mods: list, errors: list, warnings: list) -> None:
+def _lint_fn_labels(mods: list, engine: str, errors: list, warnings: list) -> None:
     """fn_label 拼错软提示（自用场景）。
 
     RA2 引擎走 WS 协议直接调 yrtr::FnLabel 字串。字串拼错的话 StrToFnLabel 返回
@@ -496,12 +488,17 @@ def _lint_fn_labels(mods: list, errors: list, warnings: list) -> None:
         fnl = m.get("fn_label")
         if not fnl:  # None 或空字串：非 fn_label 类 mod（如 protected_list 阵营保护），合法
             fk = m.get("fn_kind")
-            if fk is not None and fk not in _VALID_FN_KINDS:
+            if fk is not None and fk not in schema.VALID_FN_KIND:
                 warnings.append(
-                    f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(_VALID_FN_KINDS)}，"
+                    f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(schema.VALID_FN_KIND)}，"
                     f"前端可能渲染成通用按钮")
+            # AUD-026-B：legacy_label 能力类下，非豁免 kind 缺 fn_label → 错误（强制）。
+            if schema.fn_label_required(fk, engine):
+                errors.append(
+                    f"{mid}: fn_label 必填（引擎 {engine!r} 为 legacy_label 协议，"
+                    f"kind={fk!r} 非豁免；缺 label 时引擎 StrToFnLabel 直接丢弃该开关）")
             continue
-        if fnl not in _VALID_FN_LABELS:
+        if fnl not in schema.VALID_FN_LABELS:
             # 自用场景降为 warning：拼错字串只会让"按下没反应"，崩游戏的概率小且后果可控
             warnings.append(
                 f"{mid}: fn_label={fnl!r} 不在 RA2 协议枚举中（src/engines/ra2_yr/src/"
@@ -509,9 +506,9 @@ def _lint_fn_labels(mods: list, errors: list, warnings: list) -> None:
                 f"事件被静默丢弃，开关按下没反应")
             continue
         fk = m.get("fn_kind")
-        if fk is not None and fk not in _VALID_FN_KINDS:
+        if fk is not None and fk not in schema.VALID_FN_KIND:
             warnings.append(
-                f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(_VALID_FN_KINDS)}，"
+                f"{mid}: fn_kind={fk!r} 不在预期集合 {sorted(schema.VALID_FN_KIND)}，"
                 f"前端可能渲染成通用按钮")
 
 
