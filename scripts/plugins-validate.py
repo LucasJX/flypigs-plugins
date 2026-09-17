@@ -230,9 +230,10 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
     # 1:1 对齐（Plugin Spec v1.0 铁律）：manifest.features[].id 与 memory.mods[].id 必须一一对应
     # （备用 mod 用 suffix _alt / _2 / _备用 会被识别为非主 mod，跳过对齐要求）
     if features_list and mods_list:
-        main_features = [f.get("id") for f in features_list if isinstance(f, dict) and f.get("id")]
+        main_features = [f.get("id") for f in features_list if isinstance(f, dict) and f.get("id")
+                         and not schema.is_alt_id(f.get("id", ""))]
         main_mods = [m.get("id") for m in mods_list if isinstance(m, dict) and m.get("id")
-                     and not any(m.get("id", "").endswith(suf) for suf in ("_alt", "_2", "_备用"))]
+                     and not schema.is_alt_id(m.get("id", ""))]
         only_in_features = set(main_features) - set(main_mods)
         only_in_mods = set(main_mods) - set(main_features)
         if only_in_features:
