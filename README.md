@@ -1,4 +1,4 @@
-# Flypigs Plugins Registry
+﻿# Flypigs Plugins Registry
 
 `Flypigs Cheat Modifier` 的官方插件市场源（**Plugin Spec v1.1**）。
 
@@ -379,12 +379,102 @@ python scripts/plugins-validate.py --strict
 
 ---
 
+## 插件设计规范
+
+### 1. groups 命名规范
+
+按用户心智模型分组，不按技术实现分组：
+
+```json
+// ✅ 好的分组
+"groups": ["角色", "武器", "载具", "游戏系统"]
+
+// ❌ 坏的分组
+"groups": ["AOB扫描", "内存写入", "汇编Hook", "杂项"]
+```
+
+分组顺序 = UI 显示顺序。用户先看到"角色"，再看到"武器"。
+
+分组数量建议 4-8 个。太多（>12）说明功能过载，太少（<3）说明粒度太粗。
+
+### 2. feature 类型选择
+
+| 用户需求 | 选 type | fn_kind | 说明 |
+|---|---|---|---|
+| 开/关一个功能 | `value` | `checkbox` | 最常用，写固定值 |
+| 数值调节（金钱/弹药） | `value` | `slider` / `input` | slider 有范围，input 自由输入 |
+| 触发一次动作 | （无） | `button` | 不需要 fn_label |
+| 多选项（武器选择） | （无） | `select` / `multi_select` | 下拉选项 |
+
+**checkbox 是默认选择**。除非明确需要数值或触发动作，否则用 checkbox。
+
+### 3. mod 命名规范
+
+- `id`：小写+下划线，插件内唯一，如 `infinite_health` / `max_money`
+- `name`：中文显示名，简洁准确，如 "无限生命" / "最大金钱"
+- 不要用技术术语命名，用户不关心"AOB扫描"或"内存hook"
+
+```json
+// ✅ 好
+{ "id": "infinite_health", "name": "无限生命", "group": "角色" }
+
+// ❌ 坏
+{ "id": "god_mode_hook", "name": "GodMode Hook v2", "group": "杂项" }
+```
+
+### 4. 版本号语义（semver）
+
+```
+MAJOR.MINOR.PATCH
+  │     │     │
+  │     │     └─ 兼容性修复（AOB 更新、bug fix）
+  │     └─────── 新增功能（新 mod、新分组）
+  └───────────── 不兼容变更（删除 mod、改 id）
+```
+
+初版用 `0.1.0`。每次更新必须递增版本号，且 zip 文件名与 `version` 一致。
+
+### 5. 数据真实性铁律
+
+AOB / pointer / asm_code 必须来自真实游戏调试：
+- ✅ Cheat Engine 扫描验证
+- ✅ 开源修改器源码参考
+- ✅ 人工逐字节验证
+- ❌ AI 生成的随机字节序列
+- ❌ 猜测的偏移量
+
+失效时只改 JSON / memory.json，不重编译客户端。
+
+### 6. 兼容性要求
+
+- `min_app`：客户端最低版本，如 `"1.0.0"`
+- `engine_min`：引擎 DLL 最低版本
+- `conflicts`：互斥 mod 必须双向声明（A→B 必须 B→A）
+- 新插件必须填 `sgdb_game_id`（自动拉真海报）
+
+### 7. UI 一致性
+
+- 插件 UI 完全由客户端设计系统渲染，插件不提供自定义 UI
+- 分组标题、卡片、开关样式全部统一
+- 插件只提供：分组名 + feature 列表 + mod 数据
+- 不需要（也不应该）在插件里设计颜色、字体、布局
+
+### 8. 安全红线
+
+- ❌ `online: true`（联机作弊）
+- ❌ `anticheat` 字段（反作弊绕过）
+- ❌ 指向非白名单 host 的 download URL
+- ❌ zip 里打包 engine DLL
+- ❌ zip 里打包 assets/icon.png（由 SGDB 自动拉取）
+
+---
+
 ## 已上架插件
 
 | 插件 | 版本 | 引擎 | 功能数 | sgdb_game_id |
 |---|---|---|---|---|
-| ra2_yr（红色警戒2：尤里的复仇） | 1.1.1 | ra2_pipe (legacy_label) | 32 | 38629 |
-| just_cause_3（正当防卫3） | 1.1.3 | jc3_injected (data_driven) | 18 | 2403 |
+| ra2_yr（红色警戒2：尤里的复仇） | 1.1.11 | ra2_pipe (legacy_label) | 31 | 38629 |
+| just_cause_3（正当防卫3） | 1.1.7 | jc3_injected (data_driven) | 17 | 2403 |
 
 ---
 
