@@ -34,7 +34,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "角色",
-            "hotkey": "F1"
+            "hotkey": "Alt+F1"
         },
         {
             "id": "undetected",
@@ -50,7 +50,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "F2"
+            "hotkey": "Alt+F2"
         },
         {
             "id": "no_reload",
@@ -58,7 +58,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "F3"
+            "hotkey": "Alt+F3"
         },
         {
             "id": "infinite_battery",
@@ -66,7 +66,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "装备",
-            "hotkey": "F4"
+            "hotkey": "Alt+F4"
         },
         {
             "id": "unlimited_devices",
@@ -82,7 +82,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "经济",
-            "hotkey": "F5"
+            "hotkey": "Alt+F5"
         },
         {
             "id": "unlimited_research_points",
