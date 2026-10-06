@@ -1,0 +1,30 @@
+{
+  "id": "watch_dogs_2",
+  "name": "看门狗2",
+  "short_name": "WD2",
+  "developer": "Ubisoft Montreal",
+  "publisher": "Ubisoft",
+  "release_year": 2016,
+  "platform": "Windows",
+  "process": ["WatchDogs2.exe"],
+  "genre": ["action", "open_world", "adventure", "stealth"],
+  "support": {
+    "windows": true,
+    "x86": false,
+    "x64": true
+  },
+  "launch": {
+    "exe": "WatchDogs2.exe",
+    "args": "-eac_launcher"
+  },
+  "theme": {
+    "primary": "#FF6B35",
+    "accent": "#2EC4B6"
+  },
+  "sgdb_game_id": null,
+  "assets": {
+    "cover": "assets/cover.jpg",
+    "banner": "assets/banner.jpg",
+    "icon": "assets/icon.png"
+  }
+}

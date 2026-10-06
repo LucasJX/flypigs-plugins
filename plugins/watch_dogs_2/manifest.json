@@ -1,0 +1,113 @@
+{
+    "id": "watch_dogs_2",
+    "name": "看门狗2 (Watch Dogs 2)",
+    "process": "WatchDogs2.exe",
+    "engine": "injected_pipe",
+    "engine_dll": "flypigs_watch_dogs_2_engine.dll",
+    "version": "0.1.0",
+    "engine_min": "1.0.0",
+    "author": "Flypigs (AOB 数据参考 FearLess Cheat Engine 论坛 WatchDogs2.CT / STN & JDimensional)",
+    "launch": "",
+    "game": "WD2",
+    "description": "看门狗2 修改器 v0.1.0（11 项）：无限生命 / 无限弹药 / 无需换弹 / 无限电池 / 无限金钱 / 无限装置 / 不被发现 / 无限研究点数 / 无视研究需求 / 冻结活动计时器。AOB 全部来自开源 CT 脚本，module=Disrupt_64.dll。",
+    "flag_vars": [],
+    "groups": [
+        "角色",
+        "武器",
+        "装备",
+        "经济",
+        "研究",
+        "游戏系统"
+    ],
+    "features": [
+        {
+            "id": "health_track",
+            "name": "玩家指针捕获",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "角色",
+            "hotkey": ""
+        },
+        {
+            "id": "infinite_health",
+            "name": "无限生命",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "角色",
+            "hotkey": "F1"
+        },
+        {
+            "id": "undetected",
+            "name": "不被发现",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "角色",
+            "hotkey": ""
+        },
+        {
+            "id": "infinite_ammo",
+            "name": "无限弹药",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "武器",
+            "hotkey": "F2"
+        },
+        {
+            "id": "no_reload",
+            "name": "无需换弹",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "武器",
+            "hotkey": "F3"
+        },
+        {
+            "id": "infinite_battery",
+            "name": "无限电池",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "装备",
+            "hotkey": "F4"
+        },
+        {
+            "id": "unlimited_devices",
+            "name": "无限装置",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "装备",
+            "hotkey": ""
+        },
+        {
+            "id": "infinite_money",
+            "name": "无限金钱",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "经济",
+            "hotkey": "F5"
+        },
+        {
+            "id": "unlimited_research_points",
+            "name": "无限研究点数",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "研究",
+            "hotkey": ""
+        },
+        {
+            "id": "ignore_research_requirement",
+            "name": "无视研究需求",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "研究",
+            "hotkey": ""
+        },
+        {
+            "id": "freeze_activities_timer",
+            "name": "冻结活动计时器",
+            "type": "checkbox",
+            "fn_kind": "checkbox",
+            "group": "游戏系统",
+            "hotkey": ""
+        }
+    ],
+    "features_count": 11
+}

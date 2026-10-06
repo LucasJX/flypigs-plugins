@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at": "2026-09-07T02:29:27Z",
+  "updated_at": "2026-09-19T15:30:00Z",
   "market_base": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/",
   "plugins": [
     {
@@ -56,6 +56,57 @@
       "features_count": 17,
       "updated_at": "2026-09-07T02:29:27Z",
       "sgdb_game_id": 2403
+    },
+    {
+      "id": "just_cause_4",
+      "name": "正当防卫4 (Just Cause 4)",
+      "game": "JC4",
+      "process": "JustCause4.exe",
+      "engine": "injected_pipe",
+      "engine_min": "1.0.0",
+      "version": "0.1.0",
+      "author": "Flypigs (数据参考风灵月影 Plus 16 Trainer)",
+      "description": "正当防卫4 修改器 v0.1.0 首批 5 项：无限生命 / 一击必杀 / 无后坐力 / 挑战倒计时+60秒 / 锁定任务时间。AOB 全部取自风灵月影 JC4 修改器原始脚本，并逐条对 JustCause4.exe 静态唯一命中验证。",
+      "icon": null,
+      "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/just_cause_4/just_cause_4-0.1.0.zip",
+      "sha256": "d21722f4efc2e756e08e055cc681b214c8d685029dd08d41a05073e614cfcd12",
+      "size": 3934,
+      "min_app": "1.0.0",
+      "groups": [
+        "角色",
+        "武器",
+        "游戏系统"
+      ],
+      "features_count": 5,
+      "updated_at": "2026-09-19T15:30:00Z",
+      "sgdb_game_id": 13733
+    },
+    {
+      "id": "watch_dogs_2",
+      "name": "看门狗2 (Watch Dogs 2)",
+      "game": "WD2",
+      "process": "WatchDogs2.exe",
+      "engine": "injected_pipe",
+      "engine_min": "1.0.0",
+      "version": "0.1.0",
+      "author": "Flypigs (AOB 数据参考 FearLess Cheat Engine 论坛 WatchDogs2.CT / STN & JDimensional)",
+      "description": "看门狗2 修改器 v0.1.0（11 项）：无限生命 / 无限弹药 / 无需换弹 / 无限电池 / 无限金钱 / 无限装置 / 不被发现 / 无限研究点数 / 无视研究需求 / 冻结活动计时器。AOB 全部来自开源 CT 脚本，module=Disrupt_64.dll。",
+      "icon": null,
+      "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/watch_dogs_2/watch_dogs_2-0.1.0.zip",
+      "sha256": "a382087c745a39483f54be7a4c4dfc2bca16332381fc87df26a6a7bfddf9806f",
+      "size": 661015,
+      "min_app": "1.0.0",
+      "groups": [
+        "角色",
+        "武器",
+        "装备",
+        "经济",
+        "研究",
+        "游戏系统"
+      ],
+      "features_count": 11,
+      "updated_at": "2026-10-06T15:30:00Z",
+      "sgdb_game_id": null
     }
   ]
 }
