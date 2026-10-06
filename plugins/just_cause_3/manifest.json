@@ -30,7 +30,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "角色",
-            "hotkey": "NumPad1"
+            "hotkey": "Alt+NumPad1"
         },
         {
             "id": "one_hit_kills",
@@ -38,7 +38,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "角色",
-            "hotkey": "NumPad0"
+            "hotkey": "Alt+NumPad0"
         },
         {
             "id": "infinite_oxygen",
@@ -60,7 +60,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad3"
+            "hotkey": "Alt+NumPad3"
         },
         {
             "id": "no_reload",
@@ -68,7 +68,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad4"
+            "hotkey": "Alt+NumPad4"
         },
         {
             "id": "infinite_grenades",
@@ -76,7 +76,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad5"
+            "hotkey": "Alt+NumPad5"
         },
         {
             "id": "super_accuracy",
@@ -84,7 +84,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad6"
+            "hotkey": "Alt+NumPad6"
         },
         {
             "id": "no_recoil",
@@ -92,7 +92,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad7"
+            "hotkey": "Alt+NumPad7"
         },
         {
             "id": "rapid_fire",
@@ -100,7 +100,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "武器",
-            "hotkey": "NumPad8"
+            "hotkey": "Alt+NumPad8"
         },
         {
             "id": "infinite_vehicle_health",
@@ -108,7 +108,7 @@
             "type": "checkbox",
             "fn_kind": "checkbox",
             "group": "载具",
-            "hotkey": "NumPad2"
+            "hotkey": "Alt+NumPad2"
         },
         {
             "id": "infinite_tethers",

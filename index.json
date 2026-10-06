@@ -15,8 +15,8 @@
       "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，31 项主功能 + 1 项阵营保护专用 mod。",
       "icon": null,
       "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/ra2_yr/ra2_yr-1.1.1.zip",
-      "sha256": "b192a9354660c176a2f996c24ac2b932c79726df9bad12f5281eb46e2fa061f2",
-      "size": 3990,
+      "sha256": "c4703c220700008f190559364fd0c727e90528b518bab2f9caa71a5d6dfa602f",
+      "size": 4033,
       "min_app": "1.0.0",
       "groups": [
         "经济",
@@ -43,8 +43,8 @@
       "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，16 项主功能 + 1 项备用 AOB（应对游戏版本更新）。",
       "icon": null,
       "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/just_cause_3/just_cause_3-1.1.7.zip",
-      "sha256": "c57d874c79d86b373882811a11a72cd148f525f7acfd348d6a531535dc5cfb10",
-      "size": 1036521,
+      "sha256": "3458497cfdc640343325b28a9802f30e3c0d7b9a0a2c2e9d16369ac6b44b72d8",
+      "size": 1036575,
       "min_app": "1.0.0",
       "groups": [
         "角色",
