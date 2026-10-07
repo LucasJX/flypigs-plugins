@@ -58,30 +58,6 @@
       "sgdb_game_id": 2403
     },
     {
-      "id": "just_cause_4",
-      "name": "正当防卫4 (Just Cause 4)",
-      "game": "JC4",
-      "process": "JustCause4.exe",
-      "engine": "injected_pipe",
-      "engine_min": "1.0.0",
-      "version": "0.1.0",
-      "author": "Flypigs (数据参考风灵月影 Plus 16 Trainer)",
-      "description": "正当防卫4 修改器 v0.1.0 首批 5 项：无限生命 / 一击必杀 / 无后坐力 / 挑战倒计时+60秒 / 锁定任务时间。AOB 全部取自风灵月影 JC4 修改器原始脚本，并逐条对 JustCause4.exe 静态唯一命中验证。",
-      "icon": null,
-      "download": "https://raw.githubusercontent.com/LucasJX/flypigs-plugins/main/plugins/just_cause_4/just_cause_4-0.1.0.zip",
-      "sha256": "d21722f4efc2e756e08e055cc681b214c8d685029dd08d41a05073e614cfcd12",
-      "size": 3934,
-      "min_app": "1.0.0",
-      "groups": [
-        "角色",
-        "武器",
-        "游戏系统"
-      ],
-      "features_count": 5,
-      "updated_at": "2026-09-19T15:30:00Z",
-      "sgdb_game_id": 13733
-    },
-    {
       "id": "watch_dogs_2",
       "name": "看门狗2 (Watch Dogs 2)",
       "game": "WD2",
