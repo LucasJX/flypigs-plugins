@@ -11,12 +11,10 @@
       "pointer_path": [],
       "value_type": "int32",
       "frozen": false,
-      "target_value": 23333,
       "on": "enable",
       "fn_label": "Apply",
       "fn_kind": "input",
       "group": "经济",
-      "hotkey": "Alt+1",
       "min_value": 0,
       "max_value": 9999999
     },

@@ -367,7 +367,7 @@ python scripts/plugins-validate.py --strict
 
 校验项：index.json 合法性、zip sha256/size 一致性、manifest 与 zip 字节一致、目录与 index 一一对应、归组铁律、AutoAssembler 字段、sgdb_game_id 一致性等。
 
-其中**与「控件类型错位 / 翻译漂移」直接相关的四条 error 级铁律**（规则定义在 `scripts/schema.py`，两 validator 共用同一份）：
+其中**与「控件类型错位 / 翻译漂移 / 预填数值」直接相关的五条 error 级铁律**（规则定义在 `scripts/schema.py`，两 validator 共用同一份）：
 
 | 铁律 | 适用范围 | 判据 | 权威来源 |
 |---|---|---|---|
@@ -375,10 +375,15 @@ python scripts/plugins-validate.py --strict
 | **可逆 mod 铁律** | `data_driven` | `type=code_patch`/`code_inject` 的功能**不得**声明为 `button` | 引擎 `{"type":"restore"}` 能还原原字节 / 释放 cave |
 | **权威中文名** | `legacy_label` | `name` 必须等于引擎里的权威文案（manifest 与 memory 都要对） | `ra2_yr/.../desktop/char_table.h` 的 `GetFnStrZh` / `GetGuiStrZh` |
 | **权威分组** | `legacy_label` | `group` 必须等于原 trainer 的分组 | `ra2_yr/.../web/main.js` 的 `CATEGORY_OF` + `index.html` 分组标题 |
+| **输入型不预填** | 全部 | `fn_kind=input` 的功能**不得**带 `target_value` | 用户要求（2026-10-21）：金额输入框初始留空，由用户自己输入 |
 
 > ⚠️ **不要以 `protocol/model.h` 的 enum 注释为准**：那里把 `kApply` 标在 `// Button` 段，
 > 但引擎实际走 `OnInputEvent`（写金钱）。2026-10-21 的插件数据就是照着注释写错的，
 > 结果「钱」在详情页只剩一个「触发」按钮、金额写死 —— 这就是「触发功能却变成别的控件」的根因。
+
+> 💡 **输入型功能为什么不许带 `target_value`**：① 界面上预填一个数，用户会以为「那就是要的钱」；
+> ② 客户端在「enable 但没带数值」时会把它直接下发 —— 一旦去掉 `target_value`，
+> 这类路径必须**明确拒绝**（绝不能退化成 0，等于把玩家账上的钱清零）。
 
 退出码：`0` = 全过；`1` = 有 error；`2` = 仅 warning（--strict 下变 1）。
 
@@ -389,7 +394,7 @@ python scripts/_negtest_gates.py
 ```
 
 只加断言不验证判据 = 假绿。该脚本对每条新铁律做「原地篡改 → 跑 validator → 断言退出码非 0 →
-finally 按字节还原」，8/8 通过才算数。**CI 必跑**，新增铁律时同步补一条 case。
+finally 按字节还原」，9/9 通过才算数。**CI 必跑**，新增铁律时同步补一条 case。
 
 ---
 

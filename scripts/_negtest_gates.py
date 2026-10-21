@@ -13,6 +13,7 @@ finally 里按字节还原原文件（并断言还原成功）。
   5. 可逆 mod 铁律：code_inject / code_patch 被声明成一次性 button（JC3 3 项）
   6. 权威中文名：功能名与 char_table.h 的文案不符
   7. 权威分组：分组与 main.js CATEGORY_OF 不符（AdjustGameSpeed 曾独占「任务调速」组）
+  8. 输入型铁律：input 功能预填 target_value（「钱」的金额输入框必须初始留空）
 
 用法：python scripts/_negtest_gates.py
 """
@@ -49,7 +50,7 @@ def case(name: str, path: Path, mutate, expect_fail: bool = True) -> bool:
         tail = "\n".join(
             l for l in out.splitlines()
             if "ERROR" in l or "features_count" in l or "fn_kind" in l
-            or "中文名" in l or "分组" in l
+            or "中文名" in l or "分组" in l or "target_value" in l
         )
         print(f"[{'PASS' if ok else 'FAIL'}] {name}: exit={code} (期望 {'非0' if expect_fail else '0'})")
         if tail:
@@ -133,7 +134,18 @@ def main() -> int:
             t, count=1),
     ))
 
-    # 8) 篡改后必须恢复原状（防止上面几个 case 互相污染）
+    # 8) 输入型功能不得预填 target_value —— 「钱」的金额输入框必须初始留空，
+    #    预填的数会被用户误当成「要的钱」，而且客户端 enable 路径会把它直接下发。
+    results.append(case(
+        "RA2 apply 预填 target_value=23333（金额输入框必须初始留空）",
+        ra2_mem,
+        lambda t: re.sub(
+            r'("id": "apply",[\s\S]*?"fn_kind": "input",)',
+            r'\1\n      "target_value": 23333,',
+            t, count=1),
+    ))
+
+    # 9) 篡改后必须恢复原状（防止上面几个 case 互相污染）
     code, _ = run_validator()
     ok = code == 0
     print(f"[{'PASS' if ok else 'FAIL'}] 还原后 validator 恢复全绿: exit={code} (期望 0)")

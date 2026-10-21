@@ -363,6 +363,23 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
                                   " —— 可逆 mod 必须声明成 checkbox 开关，"
                                   "声明成 button 会让用户开了关不掉")
 
+    # --- 输入型功能不得预填 target_value（2026-10-21 新增，error 级）------------
+    # 「钱」的金额输入框初始留空、由用户自己输入（用户 2026-10-21 明确要求）。
+    # 预填 target_value 有两个害处：
+    #   1) 界面一上来就有个数，用户会以为「那就是要的钱」；
+    #   2) 客户端在「enable 但没带数值」时会把 target_value 下发；
+    #      去掉它之后这类路径必须明确拒绝 —— 否则会退化成 0，等于把玩家账上的钱清零。
+    if mods_list:
+        for m in mods_list:
+            if not isinstance(m, dict):
+                continue
+            if schema.prefilled_input_value(m):
+                res.add_error(where,
+                              f"mod {m.get('id')!r} 是输入型（fn_kind={m.get('fn_kind')!r}），"
+                              f"却预填了 target_value={m.get('target_value')!r}"
+                              " —— 输入框必须初始留空，由用户自己输入"
+                              "（规则：scripts/schema.py::prefilled_input_value）")
+
     # --- 权威中文名（2026-10-21 新增，error 级）-----------------------------
     # RA2 插件是原 trainer 的移植，功能名必须与引擎里的权威文案一致
     # （char_table.h 的 GetFnStrZh / GetGuiStrZh），否则同一功能在

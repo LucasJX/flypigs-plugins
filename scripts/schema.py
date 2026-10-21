@@ -246,6 +246,32 @@ def is_reversible_mod(mod_type: str | None) -> bool:
     return (mod_type or "value").lower() in REVERSIBLE_MOD_TYPES
 
 
+# --------------------------------------------------------------------------
+# 输入型功能（input）：不得预填 target_value
+# --------------------------------------------------------------------------
+# 2026-10-21 用户要求：RA2「钱」的金额输入框**初始留空**，由用户自己输入。
+# 预填 target_value 有两个害处：
+#   1) 界面一上来就有个数，用户会以为「那就是要的钱」；
+#   2) 客户端在「enable 但没带数值」时会拿 target_value 下发。
+#      去掉它之后，输入型功能**必须**由用户输入才有值可写，
+#      绝不能退化成 0（= 把玩家账上的钱清零）。
+INPUT_KIND = "input"
+
+
+def is_input_kind(fn_kind: str | None, mod_type: str | None = None) -> bool:
+    """该 mod 是否是「必须由用户手动输入数值」的类型。"""
+    return (fn_kind or "") == INPUT_KIND or (mod_type or "") == INPUT_KIND
+
+
+def prefilled_input_value(mod) -> bool:
+    """输入型 mod 是否预填了 target_value（正确做法是不预填）。"""
+    if not isinstance(mod, dict):
+        return False
+    if not is_input_kind(mod.get("fn_kind"), mod.get("type")):
+        return False
+    return mod.get("target_value") is not None
+
+
 def fn_label_required(fkind: str | None, engine: str | None) -> bool:
     """fn_label 是否必填。
 
