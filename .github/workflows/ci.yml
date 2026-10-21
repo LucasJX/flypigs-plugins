@@ -1,0 +1,40 @@
+name: CI
+
+# 目的：守住「插件数据 = 客户端唯一信源」这条线。
+# 2026-10-21 实测的两个真实事故都是**数据层**问题，纯代码测试一个都抓不到：
+#   1. RA2「钱」在 manifest 被写成 type=button，而引擎 kApply 走的是 input 事件
+#      → 详情页只剩「触发」按钮，金额写死，且与「游戏」控制页行为不一致；
+#   2. JC3「无需换弹」no_reload 声明了 UI 却没实现 → 详情页渲染出一个点了没反应的功能项；
+#   3. index.json 的 features_count 与 manifest 不一致 → 市场卡片写「31 项功能」、
+#      详情页写 32 项，两个数字打架（该字段此前**完全没有校验**）。
+# plugins-validate.py --strict 现在会拦这些（并已用反向测试确认闸门真的会红）。
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: 插件数据门禁
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 插件数据校验（strict）
+        # 基线文件 scripts/validate_baseline.txt 登记了「已评估、可接受」的既存 warning，
+        # strict 只对**基线之外的新增 warning** 失败。
+        run: python scripts/plugins-validate.py --root . --strict
+
+      - name: 插件语义 lint
+        run: python scripts/plugin_lint.py --all --root .
+
+      - name: 数据门禁反向测试
+        # 确认闸门本身没坏：故意篡改 features_count / fn_kind，验证 validator 会失败。
+        # 闸门要是"怎么改都过"，上面两条检查就等于没有。
+        run: python scripts/_negtest_gates.py

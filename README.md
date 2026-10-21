@@ -56,8 +56,11 @@ flypigs-plugins/
 ├── index.json                      # 仓根：所有可用插件清单（schema_version=2）
 ├── README.md                       # 本文件（Plugin Spec 单一信源）
 ├── scripts/
+│   ├── schema.py                   # 规则单一真源（fn_kind 集合 / fn_label→事件类型 / 权威中文名 / 权威分组）
 │   ├── plugin_lint.py              # 插件数据校验（引擎能力分类 + AOB/asm + 合规红线）
-│   └── plugins-validate.py         # 仓级一站式校验（index.json + zip + 目录一致性）
+│   ├── plugins-validate.py         # 仓级一站式校验（index.json + zip + 目录一致性）
+│   ├── validate_baseline.txt       # 既存 warning 基线（--strict 只拦基线外的新增）
+│   └── _negtest_gates.py           # 反向测试：确认校验闸门真的会红（CI 必跑）
 └── plugins/
     └── <plugin_id>/                # 每个插件一个子目录（id 与目录名严格一致）
         ├── manifest.json           # 插件元信息 + 功能清单 + groups
@@ -114,6 +117,8 @@ flypigs-plugins/
    python scripts/plugin_lint.py plugins/<id>/memory.json --engine <engine>
    python scripts/plugins-validate.py --strict
    ```
+   必过：事件类型铁律（`fn_kind` = 引擎事件类型）、可逆 mod 铁律（`code_patch`/`code_inject` 只能是 `checkbox`）、
+   权威中文名、权威分组、`features_count` 一致性。
 
 ---
 
@@ -360,9 +365,31 @@ python scripts/plugin_lint.py plugins/<id>/memory.json --engine jc3_injected --m
 python scripts/plugins-validate.py --strict
 ```
 
-校验项（23 项）：index.json 合法性、zip sha256/size 一致性、manifest 与 zip 字节一致、目录与 index 一一对应、归组铁律、AutoAssembler 字段、sgdb_game_id 一致性等。
+校验项：index.json 合法性、zip sha256/size 一致性、manifest 与 zip 字节一致、目录与 index 一一对应、归组铁律、AutoAssembler 字段、sgdb_game_id 一致性等。
+
+其中**与「控件类型错位 / 翻译漂移」直接相关的四条 error 级铁律**（规则定义在 `scripts/schema.py`，两 validator 共用同一份）：
+
+| 铁律 | 适用范围 | 判据 | 权威来源 |
+|---|---|---|---|
+| **事件类型铁律** | `legacy_label` | `fn_kind` / `type` 必须等于该 `fn_label` 对应的引擎事件类型 | `ra2_yr/src/backend/hook/trainer.cc` 的 `On*Event` 分派 |
+| **可逆 mod 铁律** | `data_driven` | `type=code_patch`/`code_inject` 的功能**不得**声明为 `button` | 引擎 `{"type":"restore"}` 能还原原字节 / 释放 cave |
+| **权威中文名** | `legacy_label` | `name` 必须等于引擎里的权威文案（manifest 与 memory 都要对） | `ra2_yr/.../desktop/char_table.h` 的 `GetFnStrZh` / `GetGuiStrZh` |
+| **权威分组** | `legacy_label` | `group` 必须等于原 trainer 的分组 | `ra2_yr/.../web/main.js` 的 `CATEGORY_OF` + `index.html` 分组标题 |
+
+> ⚠️ **不要以 `protocol/model.h` 的 enum 注释为准**：那里把 `kApply` 标在 `// Button` 段，
+> 但引擎实际走 `OnInputEvent`（写金钱）。2026-10-21 的插件数据就是照着注释写错的，
+> 结果「钱」在详情页只剩一个「触发」按钮、金额写死 —— 这就是「触发功能却变成别的控件」的根因。
 
 退出码：`0` = 全过；`1` = 有 error；`2` = 仅 warning（--strict 下变 1）。
+
+### _negtest_gates.py — 反向测试（闸门必须真能变红）
+
+```bash
+python scripts/_negtest_gates.py
+```
+
+只加断言不验证判据 = 假绿。该脚本对每条新铁律做「原地篡改 → 跑 validator → 断言退出码非 0 →
+finally 按字节还原」，8/8 通过才算数。**CI 必跑**，新增铁律时同步补一条 case。
 
 ---
 
@@ -376,6 +403,8 @@ python scripts/plugins-validate.py --strict
 6. download URL 推荐用 `api.github.com/repos/.../contents/`（非 raw 域）
 7. 新插件填了 `sgdb_game_id`，且**没把 assets/icon.png 打进 zip**
 8. asm_code 中的占位符全部在 aob_vars/aob_refs/flags 中声明
+9. `fn_kind` 与引擎事件类型一致（RA2 等 legacy_label 插件）；`code_patch`/`code_inject` 一律 `checkbox`
+10. 功能中文名与引擎权威文案一致（不要自造叫法）
 
 ---
 
@@ -402,11 +431,16 @@ python scripts/plugins-validate.py --strict
 | 用户需求 | 选 type | fn_kind | 说明 |
 |---|---|---|---|
 | 开/关一个功能 | `value` | `checkbox` | 最常用，写固定值 |
+| 可开关的补丁 / 注入 | `code_patch` / `code_inject` | `checkbox` | **必须是 checkbox**：禁用能还原原字节 / 释放 cave，声明成 `button` 就再也关不掉 |
 | 数值调节（金钱/弹药） | `value` | `slider` / `input` | slider 有范围，input 自由输入 |
-| 触发一次动作 | （无） | `button` | 不需要 fn_label |
+| 触发一次动作 | （无） | `button` | 不需要 fn_label；仅用于**不可逆**的一次性动作 |
 | 多选项（武器选择） | （无） | `select` / `multi_select` | 下拉选项 |
 
 **checkbox 是默认选择**。除非明确需要数值或触发动作，否则用 checkbox。
+
+> `legacy_label` 引擎（`ra2_pipe`）的 `fn_kind` **不能自己定** ——
+> 它由 `fn_label` 唯一决定（引擎的 `On*Event` 分派），写错会被 `plugins-validate.py` 拦下。
+> `type` 必须与 `fn_kind` 同值。
 
 ### 3. mod 命名规范
 
@@ -473,8 +507,27 @@ AOB / pointer / asm_code 必须来自真实游戏调试：
 
 | 插件 | 版本 | 引擎 | 功能数 | sgdb_game_id |
 |---|---|---|---|---|
-| ra2_yr（红色警戒2：尤里的复仇） | 1.1.11 | ra2_pipe (legacy_label) | 31 | 38629 |
-| just_cause_3（正当防卫3） | 1.1.7 | jc3_injected (data_driven) | 17 | 2403 |
+| ra2_yr（红色警戒2：尤里的复仇） | 1.2.2 | ra2_pipe (legacy_label) | 32 | 38629 |
+| just_cause_3（正当防卫3） | 1.2.2 | jc3_injected (data_driven) | 15 | 2403 |
+| watch_dogs_2（看门狗2） | 0.2.0 | injected_pipe (data_driven) | 11 | — |
+
+> 功能数口径 = `manifest.features_count` = **主功能数**（不含 `_2`/`_3` 等备用 AOB 变体）。
+> `index.json` 的 `features_count` 与 `manifest.features_count` 由 `plugins-validate.py --strict`
+> 强制一致（两者此前**没有任何校验**，导致市场卡片写「31 项功能」而详情页写 32 项）。
+
+### RA2 插件的命名 / 分组 / 控件类型（2026-10-21 整轮校正）
+
+ra2_yr 是原 trainer（`AdjWang/RA2YurisRevengeTrainer`）的移植，因此**功能名、分组、控件类型
+一律以引擎内权威表为准**，不得自行另造叫法：
+
+| 项 | 权威来源 | 例 |
+|---|---|---|
+| 中文名 | `char_table.h::GetFnStrZh` / `GetGuiStrZh` | `God`→无敌、`InstFire`→极速攻击、`Apply`→钱 |
+| 事件类型 | `trainer.cc` 的 `On*Event` 分派 | `Apply`→input（**不是** button）、`FastBuild`→button、`God`→checkbox |
+| 分组 | `main.js::CATEGORY_OF` + `index.html` 分组标题 | `AdjustGameSpeed`→战场控制（**不是**独立「任务调速」组） |
+
+「钱」的交互按原 trainer 还原：标签「钱」+ 数字输入框 + 「修改」按钮，缺省金额 **23333**
+（原 trainer 输入框留空时提交的值）。
 
 ---
 
@@ -490,7 +543,7 @@ AOB / pointer / asm_code 必须来自真实游戏调试：
 
 ## 升级计划
 
-- [ ] GitHub Actions CI 自动跑校验
+- [x] GitHub Actions CI 自动跑校验（`.github/workflows/ci.yml`：validate --strict + lint + 反向测试）
 - [ ] CI 自动生成 index.json
 - [ ] 增量 diff 接口
 - [ ] 插件签名

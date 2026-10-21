@@ -3,22 +3,22 @@
   "name": "红色警戒2：尤里的复仇 (RA2 YR)",
   "process": "gamemd.exe",
   "engine": "ra2_pipe",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "features_count": 32,
   "engine_min": "1.0.0",
   "author": "Flypigs",
   "features": [
     {
       "id": "apply",
-      "name": "应用修改",
-      "type": "button",
+      "name": "钱",
+      "type": "input",
       "fn_label": "Apply",
-      "fn_kind": "button",
+      "fn_kind": "input",
       "group": "经济"
     },
     {
       "id": "iam_winner",
-      "name": "我即胜利",
+      "name": "立即胜利",
       "type": "button",
       "fn_label": "IAMWinner",
       "fn_kind": "button",
@@ -34,7 +34,7 @@
     },
     {
       "id": "clear_shroud",
-      "name": "揭开黑幕",
+      "name": "地图全开",
       "type": "button",
       "fn_label": "ClearShroud",
       "fn_kind": "button",
@@ -42,7 +42,7 @@
     },
     {
       "id": "give_me_a_bomb",
-      "name": "给我炸弹",
+      "name": "核弹攻击",
       "type": "button",
       "fn_label": "GiveMeABomb",
       "fn_kind": "button",
@@ -74,7 +74,7 @@
     },
     {
       "id": "this_is_mine",
-      "name": "据为己有",
+      "name": "这是我的",
       "type": "button",
       "fn_label": "ThisIsMine",
       "fn_kind": "button",
@@ -82,15 +82,15 @@
     },
     {
       "id": "adjust_game_speed",
-      "name": "调整游戏速度",
+      "name": "任务调速",
       "type": "slider",
       "fn_label": "AdjustGameSpeed",
       "fn_kind": "slider",
-      "group": "任务调速"
+      "group": "战场控制"
     },
     {
       "id": "god",
-      "name": "上帝模式",
+      "name": "无敌",
       "type": "checkbox",
       "fn_label": "God",
       "fn_kind": "checkbox",
@@ -106,7 +106,7 @@
     },
     {
       "id": "unlimit_super_weapon",
-      "name": "超级武器无限",
+      "name": "无限超武",
       "type": "checkbox",
       "fn_label": "UnlimitSuperWeapon",
       "fn_kind": "checkbox",
@@ -114,7 +114,7 @@
     },
     {
       "id": "inst_fire",
-      "name": "瞬间开火",
+      "name": "极速攻击",
       "type": "checkbox",
       "fn_label": "InstFire",
       "fn_kind": "checkbox",
@@ -122,7 +122,7 @@
     },
     {
       "id": "inst_turn",
-      "name": "瞬间转向",
+      "name": "极速转身",
       "type": "checkbox",
       "fn_label": "InstTurn",
       "fn_kind": "checkbox",
@@ -130,7 +130,7 @@
     },
     {
       "id": "range_to_your_base",
-      "name": "射程覆盖你家",
+      "name": "远程攻击",
       "type": "checkbox",
       "fn_label": "RangeToYourBase",
       "fn_kind": "checkbox",
@@ -138,7 +138,7 @@
     },
     {
       "id": "fire_to_your_base",
-      "name": "火力覆盖你家",
+      "name": "远程警戒",
       "type": "checkbox",
       "fn_label": "FireToYourBase",
       "fn_kind": "checkbox",
@@ -146,7 +146,7 @@
     },
     {
       "id": "freeze_gap_generator",
-      "name": "冻结裂缝产生器",
+      "name": "瘫痪裂缝产生器",
       "type": "checkbox",
       "fn_label": "FreezeGapGenerator",
       "fn_kind": "checkbox",
@@ -154,7 +154,7 @@
     },
     {
       "id": "sell_the_world",
-      "name": "出售全世界",
+      "name": "卖卖卖",
       "type": "checkbox",
       "fn_label": "SellTheWorld",
       "fn_kind": "checkbox",
@@ -162,7 +162,7 @@
     },
     {
       "id": "build_everywhere",
-      "name": "随地建造",
+      "name": "随意建筑",
       "type": "checkbox",
       "fn_label": "BuildEveryWhere",
       "fn_kind": "checkbox",
@@ -170,7 +170,7 @@
     },
     {
       "id": "auto_repair",
-      "name": "自动维修",
+      "name": "自动修理",
       "type": "checkbox",
       "fn_label": "AutoRepair",
       "fn_kind": "checkbox",
@@ -178,7 +178,7 @@
     },
     {
       "id": "socialism_majesty",
-      "name": "社会主义威严",
+      "name": "社会主义万岁",
       "type": "checkbox",
       "fn_label": "SocialismMajesty",
       "fn_kind": "checkbox",
@@ -186,7 +186,7 @@
     },
     {
       "id": "make_captured_mine",
-      "name": "占领即矿场",
+      "name": "全是我的-工程师占领",
       "type": "checkbox",
       "fn_label": "MakeCapturedMine",
       "fn_kind": "checkbox",
@@ -194,7 +194,7 @@
     },
     {
       "id": "make_garrisoned_mine",
-      "name": "驻军即矿场",
+      "name": "全是我的-房屋驻军",
       "type": "checkbox",
       "fn_label": "MakeGarrisonedMine",
       "fn_kind": "checkbox",
@@ -202,7 +202,7 @@
     },
     {
       "id": "invade_mode",
-      "name": "入侵模式",
+      "name": "侵略模式",
       "type": "checkbox",
       "fn_label": "InvadeMode",
       "fn_kind": "checkbox",
@@ -218,7 +218,7 @@
     },
     {
       "id": "unlimit_fire_power",
-      "name": "无限火力",
+      "name": "大量弹药-重新建造生效",
       "type": "checkbox",
       "fn_label": "UnlimitFirePower",
       "fn_kind": "checkbox",
@@ -234,7 +234,7 @@
     },
     {
       "id": "spy_spy",
-      "name": "间谍渗透",
+      "name": "无间道",
       "type": "checkbox",
       "fn_label": "SpySpy",
       "fn_kind": "checkbox",
@@ -242,7 +242,7 @@
     },
     {
       "id": "select_enemy",
-      "name": "框选敌人",
+      "name": "多选敌方单位",
       "type": "checkbox",
       "fn_label": "SelectEnemy",
       "fn_kind": "checkbox",
@@ -258,8 +258,8 @@
     },
     {
       "id": "protected",
-      "name": "阵营保护",
-      "type": "button",
+      "name": "保护阵营",
+      "type": "protected_list",
       "fn_label": "",
       "fn_kind": "protected_list",
       "group": "阵营保护"
@@ -271,9 +271,8 @@
     "建造",
     "单位操作",
     "战场控制",
-    "任务调速",
     "阵营保护"
   ],
   "game": "RA2 YR",
-  "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 任务调速 / 阵营保护，共 32 项。"
+  "description": "RA2 YR 全功能作弊：经济 / 战斗增益 / 建造 / 单位操作 / 战场控制 / 阵营保护，共 32 项。"
 }

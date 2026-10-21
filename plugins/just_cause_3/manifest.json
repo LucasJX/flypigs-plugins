@@ -4,7 +4,7 @@
   "process": "JustCause3.exe",
   "engine": "injected_pipe",
   "engine_dll": "flypigs_just_cause_3_engine.dll",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "flag_vars": [
     "health",
     "vehicle_health",
@@ -15,7 +15,7 @@
   "author": "Flypigs (功能参考风灵月影 Plus 17 Trainer)",
   "launch": "",
   "game": "JC3",
-  "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，共 17 项。",
+  "description": "正当防卫3 全功能修改器：角色 / 武器 / 载具 / 抓钩装备 / 游戏系统，15 项主功能 + 2 项备用 AOB（应对游戏版本更新）。",
   "groups": [
     "角色",
     "武器",
@@ -50,8 +50,8 @@
     {
       "id": "easy_clear_heat",
       "name": "快速清除热度",
-      "type": "button",
-      "fn_kind": "button",
+      "type": "checkbox",
+      "fn_kind": "checkbox",
       "group": "角色"
     },
     {
@@ -61,14 +61,6 @@
       "fn_kind": "checkbox",
       "group": "武器",
       "hotkey": "Alt+NumPad3"
-    },
-    {
-      "id": "no_reload",
-      "name": "无需换弹",
-      "type": "checkbox",
-      "fn_kind": "checkbox",
-      "group": "武器",
-      "hotkey": "Alt+NumPad4"
     },
     {
       "id": "infinite_grenades",
@@ -120,8 +112,8 @@
     {
       "id": "unlock_all_gear_mods",
       "name": "解锁所有装备改装",
-      "type": "button",
-      "fn_kind": "button",
+      "type": "checkbox",
+      "fn_kind": "checkbox",
       "group": "抓钩装备"
     },
     {
@@ -141,10 +133,10 @@
     {
       "id": "add_10k_challenge_score",
       "name": "增加10K挑战分数",
-      "type": "button",
-      "fn_kind": "button",
+      "type": "checkbox",
+      "fn_kind": "checkbox",
       "group": "游戏系统"
     }
   ],
-  "features_count": 16
+  "features_count": 15
 }

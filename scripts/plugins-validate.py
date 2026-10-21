@@ -78,6 +78,40 @@ class Result:
         return not self.errors
 
 
+# --- 基线（既存 warning 白名单）------------------------------------------------
+# 为什么要基线：--strict 一旦被既存 warning 永久钉死，就没人愿意拿它当 CI 闸门，
+# 于是「新增一条问题」和「一直存在的老问题」混在一起无法区分。
+# 基线制把「已登记、已评估、可接受」的既存 warning 显式记下来，
+# strict 只对**基线之外的新增 warning** 失败——既不掩盖老问题，也不让闸门永远红。
+#
+# 基线文件格式：每行一条 warning 签名（按**子串**匹配 warning 全文），'#' 开头为注释。
+# 新增 warning 应当在 strict 失败后，把签名登记进基线并写明「为什么可接受」。
+
+def _load_baseline(path: Path) -> list[str]:
+    if not path.exists():
+        return []
+    out: list[str] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            out.append(line)
+    return out
+
+
+def _split_baseline(warnings: list[str], baseline: list[str]) -> tuple[list[str], list[str]]:
+    """把 warning 分成 (基线内, 新增)。按子串匹配。"""
+    if not baseline:
+        return [], list(warnings)
+    known: list[str] = []
+    fresh: list[str] = []
+    for w in warnings:
+        if any(sig in w for sig in baseline):
+            known.append(w)
+        else:
+            fresh.append(w)
+    return known, fresh
+
+
 def _read_json(path: Path) -> tuple[dict | None, str | None]:
     try:
         with path.open(encoding="utf-8") as f:
@@ -243,6 +277,148 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
             res.add_warning(where,
                 f"memory 有但 manifest 无（实现了但没暴露给 UI）: {sorted(only_in_mods)}")
 
+    # legacy_label（RA2）插件：fn_kind 是「引擎协议类型」（决定下发 button/checkbox/
+    # slider/input 哪种事件），memory.mods 是真源，manifest.features 必须与之一致。
+    # 不一致时，客户端详情页（按 manifest 的 type 渲染）会给出与引擎不匹配的控件：
+    # 2026-10-21 实测 RA2「钱」在 manifest 里被写成 button，而引擎 kApply 走 input 事件
+    # → 详情页只剩「触发」按钮、金额写死，且与「游戏」控制页行为不一致。
+    # 同时 type（UI 控件类型）必须与 fn_kind 同值：legacy_label 插件的 memory.mods
+    # 没有独立的 mod type（data_driven 才有 code_inject/code_patch），两者本就该同值。
+    if features_list and mods_list and schema.resolve_engine_class(mf.get("engine")) == "legacy_label":
+        by_f = {f.get("id"): f for f in features_list if isinstance(f, dict)}
+        for m in mods_list:
+            if not isinstance(m, dict):
+                continue
+            mid = m.get("id") or "?"
+            f = by_f.get(m.get("id"))
+            if not f:
+                continue
+            mk, fk = m.get("fn_kind"), f.get("fn_kind")
+            if mk and fk and mk != fk:
+                res.add_error(where,
+                              f"mod {mid!r} fn_kind 不一致: memory={mk!r} vs manifest={fk!r}"
+                              "（legacy_label 的 fn_kind 是引擎协议类型，两处必须一致）")
+            ft = f.get("type")
+            if ft and mk and ft != mk:
+                res.add_error(where,
+                              f"mod {mid!r} 的 features[].type={ft!r} 与 fn_kind={mk!r} 不一致"
+                              "（type 是 UI 控件类型，legacy_label 下必须与 fn_kind 同值）")
+
+    # --- 事件类型铁律（2026-10-21 新增，error 级）-----------------------------
+    # 「触发功能却变成了开关/输入框」这类错位的根因：插件数据把 fn_kind 写错，
+    # 而客户端既按 fn_kind 渲染控件、也按 fn_kind 派发引擎事件 —— 写错就两头对不上。
+    # 权威来源 = 引擎的 On*Event 分派（ra2_yr trainer.cc），已固化进 schema.py。
+    # ⚠️ 不能以 model.h 的 enum 注释为准：那里把 kApply 标在 "// Button" 段，
+    #    但引擎实际走 OnInputEvent（写金钱）——照注释改就是本次修掉的原 bug。
+    engine_class = schema.resolve_engine_class(mf.get("engine"))
+    if engine_class == "legacy_label" and mods_list and features_list:
+        by_id = {m.get("id"): m for m in mods_list if isinstance(m, dict)}
+        for f in features_list:
+            if not isinstance(f, dict):
+                continue
+            fid = f.get("id")
+            m = by_id.get(fid)
+            if not m:
+                continue
+            label = m.get("fn_label") or f.get("fn_label") or ""
+            expected = schema.fn_label_event_kind(label)
+            if not expected:
+                continue
+            for field in ("fn_kind", "type"):
+                got = f.get(field)
+                if got and got != expected:
+                    res.add_error(where,
+                                  f"feature {fid!r} 的 {field}={got!r} 与引擎事件类型不符"
+                                  f"（fn_label={label!r} 实际是 {expected!r}）"
+                                  " —— 声明成别的控件会与引擎派发对不上"
+                                  "（权威表：scripts/schema.py::FN_LABEL_EVENT_KIND）")
+            mk = m.get("fn_kind")
+            if mk and mk != expected:
+                res.add_error(where,
+                              f"mod {fid!r} 的 fn_kind={mk!r} 与引擎事件类型不符"
+                              f"（fn_label={label!r} 实际是 {expected!r}）"
+                              "（权威表：scripts/schema.py::FN_LABEL_EVENT_KIND）")
+
+    # --- 可逆 mod 必须是开关（2026-10-21 新增，error 级）---------------------
+    # code_patch / code_inject 在禁用时能真正还原（还原原字节 / 释放 cave），
+    # 声明成一次性「触发」按钮 = 用户开了就再也关不掉。
+    # 2026-10-21 实测：JC3 的 easy_clear_heat / unlock_all_gear_mods /
+    # add_10k_challenge_score 三项都是 code_inject，却被声明成 button。
+    if engine_class == "data_driven" and mods_list and features_list:
+        by_id = {m.get("id"): m for m in mods_list if isinstance(m, dict)}
+        for f in features_list:
+            if not isinstance(f, dict):
+                continue
+            fid = f.get("id")
+            m = by_id.get(fid)
+            if not m:
+                continue
+            if not schema.is_reversible_mod(m.get("type")):
+                continue
+            for field in ("fn_kind", "type"):
+                if f.get(field) == "button":
+                    res.add_error(where,
+                                  f"feature {fid!r} 的 {field}='button' 不可接受"
+                                  f"（mod.type={m.get('type')!r} 是可逆的，禁用能还原）"
+                                  " —— 可逆 mod 必须声明成 checkbox 开关，"
+                                  "声明成 button 会让用户开了关不掉")
+
+    # --- 权威中文名（2026-10-21 新增，error 级）-----------------------------
+    # RA2 插件是原 trainer 的移植，功能名必须与引擎里的权威文案一致
+    # （char_table.h 的 GetFnStrZh / GetGuiStrZh），否则同一功能在
+    # 「插件详情页」（读 manifest.features[].name）与「游戏控制页」（读 memory.mods[].name）
+    # 会叫成两个名字 —— 2026-10-21 用户报的「中文对应翻译有问题」就是这条。
+    if engine_class == "legacy_label" and mods_list:
+        by_id = {m.get("id"): m for m in mods_list if isinstance(m, dict)}
+        for m in mods_list:
+            if not isinstance(m, dict):
+                continue
+            mid = m.get("id") or "?"
+            expected_zh = schema.authoritative_zh_name(m.get("fn_label"), mid)
+            if not expected_zh:
+                continue
+            got = m.get("name")
+            if got != expected_zh:
+                res.add_error(where,
+                              f"mod {mid!r} 的中文名 {got!r} 与引擎权威文案 {expected_zh!r} 不一致"
+                              "（权威表：char_table.h GetFnStrZh/GetGuiStrZh，"
+                              "见 scripts/schema.py::FN_LABEL_ZH_NAMES）")
+        for f in features_list:
+            if not isinstance(f, dict):
+                continue
+            fid = f.get("id")
+            m = by_id.get(fid)
+            if not m:
+                continue
+            expected_zh = schema.authoritative_zh_name(m.get("fn_label"), fid)
+            if not expected_zh:
+                continue
+            got = f.get("name")
+            if got and got != expected_zh:
+                res.add_error(where,
+                              f"feature {fid!r} 的中文名 {got!r} 与引擎权威文案 {expected_zh!r} 不一致"
+                              "（详情页读 manifest 的 name，控制页读 memory 的 name，"
+                              "两处不一致就会出现「同名不同叫」）")
+
+    # --- 权威分组（2026-10-21 新增，error 级）-------------------------------
+    # 分组也是引擎的权威数据（main.js CATEGORY_OF + index.html 分组标题）。
+    # 2026-10-21 实测：AdjustGameSpeed 被单独放进「任务调速」组，而原 trainer 里
+    # 它是战场控制组底部的独立滑杆块 —— 凭空多出一个分组，用户看到的结构就与原版不一致。
+    if engine_class == "legacy_label" and mods_list:
+        for m in mods_list:
+            if not isinstance(m, dict):
+                continue
+            mid = m.get("id") or "?"
+            expected_group = schema.authoritative_group(m.get("fn_label"), mid)
+            if not expected_group:
+                continue
+            got = m.get("group")
+            if got != expected_group:
+                res.add_error(where,
+                              f"mod {mid!r} 的分组 {got!r} 与引擎权威分组 {expected_group!r} 不一致"
+                              "（权威表：main.js CATEGORY_OF + index.html 分组标题，"
+                              "见 scripts/schema.py::FN_LABEL_GROUP）")
+
     # 归组铁律：memory.mods[].group 必须命中 manifest.groups（**这条才是真正的"分组铁律"**）
     if mods_list and isinstance(groups, list):
         ungrouped: list[str] = []
@@ -349,6 +525,22 @@ def _check_plugin(plugin_dir: Path, index_entries: dict, res: Result) -> None:
     else:
         res.add_pass(f"size 一致 ({size}B)")
 
+    # index.json.features_count 必须与 manifest.features_count 一致。
+    # 市场卡片显示的是 index.features_count（桌面 MarketPanel/DashboardPanel +
+    # 手机 market_plugin.dart 都读它），插件详情页显示的是 manifest.features.Count，
+    # 两处不同源且此前**没有任何校验** → 卡片写「31 项功能」而详情页写 32 项（2026-10-21 实测）。
+    # 这条是口径统一（AUD-040）的落地闸门。
+    idx_fc = index_entry.get("features_count")
+    mf_fc = mf.get("features_count")
+    if not isinstance(idx_fc, int):
+        res.add_error(where, "index.json.features_count 必填且必须为整数（市场卡片直接显示该数字）")
+    elif isinstance(mf_fc, int) and idx_fc != mf_fc:
+        res.add_error(where,
+                      f"index.json.features_count={idx_fc} != manifest.features_count={mf_fc}"
+                      "（市场卡片与详情页显示的功能数会打架）")
+    else:
+        res.add_pass(f"index.json.features_count 一致 ({idx_fc})")
+
     download = index_entry.get("download", "")
     if download and not download.endswith(expected_zip_name):
         res.add_warning(where, f"index.json.download 文件名 {download.split('/')[-1]!r} ≠ {expected_zip_name!r}")
@@ -447,7 +639,8 @@ def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("targets", nargs="*", help="要校验的 plugins/<id> 路径（缺省扫全部）")
     ap.add_argument("--root", default=".", help="仓根路径，默认当前目录")
-    ap.add_argument("--strict", action="store_true", help="警告升级为错误")
+    ap.add_argument("--strict", action="store_true", help="警告升级为错误（基线内的既存 warning 不算）")
+    ap.add_argument("--baseline", default="", help="既存 warning 基线文件（默认 scripts/validate_baseline.txt，存在即生效）")
     ap.add_argument("--quiet", action="store_true", help="只打印问题，隐藏 passed 清单")
     args = ap.parse_args(argv)
 
@@ -455,6 +648,11 @@ def main(argv: list[str]) -> int:
     if not (root / "index.json").exists():
         print(f"{RED}未找到 {root / 'index.json'}，请指定仓根（--root）{RESET}", file=sys.stderr)
         return 1
+    # 基线文件默认取仓内 scripts/validate_baseline.txt（存在即生效）
+    if not args.baseline:
+        _default_bl = root / "scripts" / "validate_baseline.txt"
+        if _default_bl.exists():
+            args.baseline = str(_default_bl)
 
     overall = Result()
     entries = _check_index_json(root, overall)
@@ -490,24 +688,30 @@ def main(argv: list[str]) -> int:
 
 
 def _report(res: Result, args: Any) -> int:
+    baseline = _load_baseline(Path(args.baseline)) if args.baseline else []
+    known, fresh = _split_baseline(res.warnings, baseline)
+
     if not args.quiet:
         for p in res.passed:
             print(f"{GRAY}✓{RESET} {p}")
-    for w in res.warnings:
+    for w in known:
+        print(f"{GRAY}BASE{RESET} {w}")
+    for w in fresh:
         print(f"{YELLOW}WARN{RESET} {w}")
     for e in res.errors:
         print(f"{RED}ERROR{RESET} {e}")
 
     if res.errors:
-        print(f"\n{RED}FAILED{RESET} — {len(res.errors)} errors, {len(res.warnings)} warnings")
+        print(f"\n{RED}FAILED{RESET} — {len(res.errors)} errors, {len(fresh)} warnings (+{len(known)} baseline)")
         return 1
-    if res.warnings and args.strict:
-        print(f"\n{YELLOW}FAILED (strict){RESET} — {len(res.warnings)} warnings")
+    if fresh and args.strict:
+        print(f"\n{YELLOW}FAILED (strict){RESET} — {len(fresh)} new warning(s)（另有 {len(known)} 条在基线内，已接受）")
+        print("  新增 warning 会让闸门变红：要么修掉，要么评估后登记进基线文件并写明理由。")
         return 1
-    if res.warnings:
-        print(f"\n{YELLOW}PASSED{RESET} with {len(res.warnings)} warning(s)")
+    if fresh:
+        print(f"\n{YELLOW}PASSED{RESET} with {len(fresh)} warning(s)（另有 {len(known)} 条在基线内，已接受）")
         return 0
-    print(f"\n{GREEN}PASSED{RESET}")
+    print(f"\n{GREEN}PASSED{RESET}（{len(known)} 条 warning 在基线内，已接受）")
     return 0
 
 

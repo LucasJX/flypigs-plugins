@@ -1,0 +1,32 @@
+# plugins-validate.py 既存 warning 基线
+#
+# 作用：让 --strict 成为一个**真正可用**的 CI 闸门。
+#   - 登记在基线里的 warning = 已评估、可接受的老问题（不阻断 strict）
+#   - 基线之外的新增 warning = 新引入的问题（strict 失败，必须修或显式登记）
+#
+# 匹配方式：按**子串**匹配 warning 全文（warning 形如 "[where] 消息"）。
+# 登记新条目前请在行尾写明「为什么可接受」，否则它会变成没人负责的永久豁免。
+#
+# 用法：python scripts/plugins-validate.py --strict
+#       新增 warning 会在 strict 失败；评估后把签名加进来并写明理由。
+
+# --- 1. asm_code 用汇编文本而非 hex ---------------------------------------------
+# 理由：MemoryEngine.ApplyCodeInject 对 asm_code 同时支持 hex 与汇编文本两种格式
+#       （MemoryEngine.cs: `LooksLikeHex(...) ? ParseHexBytes(...) : AsmHelper.Assemble(...)`），
+#       引擎侧**实际能跑**；这 18 条是 Spec v1.0「优先 hex」的迁移提醒，不是缺陷。
+#       真正需要 hex 的场景（AsmHelper 不支持的复杂 SIMD 指令）已由
+#       asm-verify 工具（66 项断言）单独覆盖，不在本 validator 职责内。
+#       收敛计划：逐个 mod 转 hex，转完一条删一条签名。
+asm_code 是 asm 文本格式（不是 hex）
+
+# --- 2. legacy_label 插件跳过 AOB/asm 语义检查 ----------------------------------
+# 理由：ra2_yr 走 ra2_pipe（legacy_label）引擎，fn_label 协议由 C++ 引擎自身保证
+#       （src/engines/ra2_yr/src/backend/hook/trainer.cc 的 On*Event 分派），
+#       插件数据里没有 AOB/asm 字段，validator 无从校验——属预期跳过。
+引擎 'ra2_pipe'（legacy_label）：跳过 AOB/asm 语义检查
+
+# --- 3. watch_dogs_2 缺 sgdb_game_id ---------------------------------------------
+# 理由：WD2 插件已内嵌 banner/cover 海报，PC 端 PosterService 优先用内置海报、
+#       SGDB 只作兜底（commit 80d36f6），因此缺 sgdb_game_id 不影响展示效果。
+#       后续若补上 sgdb_game_id，删掉这一条签名。
+game.json.sgdb_game_id 缺失或非正整数
